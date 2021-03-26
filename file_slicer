@@ -1,0 +1,21 @@
+<html>
+<title>文件分割 File Slicer</title>
+<!--这是一个在内存操作文件的工具，请注意内存占用。 This is a tool for operating files in memory. Please pay attention to memory usage.-->
+<input type="text" id="BB" value="1048576" /><!--id是随意的，在createAndDownloadFile函数（实现在本文件内）中会被引用1次。The id is arbitrary and will be referenced once in the function createanddownloadfile (implemented in this file). 1048576=1M-->字节每文件 Bytes per file
+<input type="file" onchange="createAndDownloadFile('s',this.files[0])" /><!--createAndDownloadFile函数的实现在本文件内。The implementation of the function createanddownloadfile is in this file.-->
+<script>
+function createAndDownloadFile(fileName, content) {//创建并且下载文件（文件名，内容）
+	var s = parseInt(document.getElementById("BB").value);//根据之前定义的id获取到用户希望的分割单位（字节）。这个数字之后会被多次引用。According to the previously defined ID, the desired part unit (byte) is obtained. This number will be referenced many times.
+	var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被多次引用。Converts the content of the file to a blob object, which will be referenced many times.
+	var n = Math.ceil(blob.size/s);//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
+	for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
+		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
+		var Thomas = blob.slice(s*i,s*(i+1),'application/octet-stream');//取出分割部分，不考虑文件类型。Take out the split part without regarding the file type.
+		aTag.download = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
+		aTag.href = URL.createObjectURL(Thomas);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
+		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
+		URL.revokeObjectURL(Thomas);//释放已经无用的URL对象。Release the used URL object.
+	}
+}
+</script>
+</html>
