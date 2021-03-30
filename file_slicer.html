@@ -1,4 +1,5 @@
 <html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><!--声明文件的编码格式为UTF-8，用于提升与其他环境的兼容性。 The encoding format of the declaration file is UTF-8, which is used to improve the compatibility with other environments.-->
 <title>文件分割 File Slicer</title>
 <!--这是一个在内存操作文件的工具，请注意内存占用。 This is a tool for operating files in memory. Please pay attention to memory usage.-->
 <input type="text" id="BB" value="1048576" /><!--id是随意的，在sliceAndDownloadFiles函数（实现在本文件内）中会被引用1次。The id is arbitrary and will be referenced once in the function sliceAndDownloadFiles (implemented in this file). 1048576=1M-->字节每文件 Bytes per file
@@ -21,7 +22,7 @@ function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（
 <hr /><!--下面开始是附加的合并文件功能，用于还原被拆分的文件。-->
 将它们合并回去 Merge them back<input type="file" multiple onchange="mergeAndDownloadFile('merged', this.files)" />
 <script>
-function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（多个内容）
+function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（文件名，多个内容）
 	var blob = new Blob(contents, {type: 'application/octet-stream'});//将多个文件的主体合并转换为一个Blob对象，不考虑文件类型。merged the principals of multiple files into a blob object without regarding the file type.
 	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
 	aTag.download = fileName;//设置下载文件的文件名。Set the file name of the download file.
