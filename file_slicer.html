@@ -2,25 +2,26 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><!--声明此文件的编码格式是UTF-8，用于提高与其他环境的兼容性。 Declare that the encoding format of this file is UTF-8, which is used to improve the compatibility with other environments.-->
 <title>文件分割 File Slicer</title>
 <!--这是一个在内存操作文件的工具，请注意内存占用。 This is a tool for operating files in memory. Please pay attention to memory usage.-->
-<input type="text" id="BB" value="1048576" /><!--id是随意的，在sliceAndDownloadFiles函数（实现在本文件内）中会被引用1次。The id is arbitrary and will be referenced once in the function sliceAndDownloadFiles (implemented in this file). 1048576=1M-->字节每文件 Bytes per file
-<input type="file" onchange="sliceAndDownloadFiles('s',this.files[0])" /><!--sliceAndDownloadFiles函数的实现在本文件内。The implementation of the function sliceAndDownloadFiles is in this file.-->
+<label><input type="text" id="SizePerFile" value="1048576" /><!--节点id在sliceAndDownloadFiles函数（实现在本文件内）中会被引用1次。1048576=1M The node id will be referenced once in the function sliceAndDownloadFiles (implemented in this file).-->字节每文件 Bytes per file</label>
+<input type="file" style="display:block" onchange="sliceAndDownloadFiles('s',this.files[0])" /><!--sliceAndDownloadFiles函数的实现在下面。The implementation of the function sliceAndDownloadFiles is below.-->
 <script>
 function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（文件名，内容）
-	var s = parseInt(document.getElementById("BB").value);//根据之前定义的id获取到用户希望的分割单位（字节）。这个数字之后会被多次引用。According to the previously defined ID, the desired part unit (byte) is obtained. This number will be referenced many times.
+	var s = parseInt(document.getElementById("SizePerFile").value);//根据之前定义的id获取到用户希望的分割单位（字节）。这个数字之后会被多次引用。According to the previously defined ID, the desired part unit (byte) is obtained. This number will be referenced many times.
 	var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被多次引用。Converts the content of the file to a blob object, which will be referenced many times.
 	var n = Math.ceil(blob.size/s);//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
 	for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
 		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
-		var Thomas = blob.slice(s*i,s*(i+1),'application/octet-stream');//取出分割部分，不考虑文件类型。Take out the split part without regarding the file type.
+		var sliced = blob.slice(s*i,s*(i+1),'application/octet-stream');//取出分割部分，不考虑文件类型。Take out the split part without regarding the file type.
 		aTag.download = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
-		aTag.href = URL.createObjectURL(Thomas);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
+		aTag.href = URL.createObjectURL(sliced);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
 		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
-		URL.revokeObjectURL(Thomas);//释放已经无用的URL对象。Release the used URL object.
+		URL.revokeObjectURL(sliced);//释放已经无用的URL对象。Release the used URL object.
 	}
 }
 </script>
-<hr /><!--下面开始是附加的合并文件功能，用于还原被拆分的文件。-->
-将它们合并回去 Merge them back<input type="file" multiple onchange="mergeAndDownloadFile('merged', this.files)" />
+<hr /><!--下面是附加的合并文件功能，用于还原被拆分的文件。The following is an additional merge file function for restoring split files.-->
+将它们合并回去 Merge them back
+<input type="file" style="display:block" multiple onchange="mergeAndDownloadFile('merged', this.files)" />
 <script>
 function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（文件名，多个内容）
 	var blob = new Blob(contents, {type: 'application/octet-stream'});//将多个文件的主体合并转换为一个Blob对象，不考虑文件类型。merged the principals of multiple files into a blob object without regarding the file type.
@@ -29,6 +30,42 @@ function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（
 	aTag.href = URL.createObjectURL(blob);//将<a>节点的链接绑定到已经合并的文件。Bind the link of <a> node to the merged file.
 	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 	URL.revokeObjectURL(blob);//释放已经无用的URL对象。Release the used URL object.
+}
+</script>
+<hr style="border:1px solid" /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
+高级文件拆分参数列表 Advanced file splitting parameter list
+<textarea id="ParameterList" style="display:block;width:90%" rows=5 placeholder="star~end,star~end...&#10;起始字节~结束字节,起始字节~结束字节……"></textarea><!--节点id会在此文件节点的onclick事件中引用多次。 The node ID will be referenced multiple times in onclick attributes of nodes within this file.-->
+<label><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--changeTips函数的实现在下面。The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
+<script>
+function changeTips(isChecked, textareaNode) {//修改提示(是否勾选，文本区域节点)
+	if(isChecked) {//勾选：使用默认值。Checked: use the default value.
+		textareaNode.setAttribute("placeholder", "star~end,star~end...\n起始字节~结束字节,起始字节~结束字节……");//设置使用默认值的配套提示。Set the prompt matching to use the default value.
+	} else {//未勾选：不使用默认值。Uncheck: do not use the default value.
+		textareaNode.setAttribute("placeholder", "star~end.contentType,star~end.contentType...\n起始字节~结束字节.文档类型,起始字节~结束字节.文档类型……\n参数可根据需要留空。Parameters can be left blank as needed.");//设置不使用默认值的配套提示。Set the prompt matching not to use the default value.
+	}
+}
+</script>
+<input type="file" style="display:block" onchange="advancedSliceAndDownloadFiles('s',this.files[0],document.getElementById('ParameterList').value,document.getElementById('CheckBox1').checked)" /><!--advancedSliceAndDownloadFiles函数的实现在下面。The implementation of the function advancedSliceAndDownloadFiles is below.-->
+<script>
+function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked1) {//高级拆分并且下载文件（文件名，内容，参数列表，勾选1）
+	var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被循环引用。Converts the content of the file to a blob object, which will be referenced circularly.
+	var parameters = parameterList.split(",");//将参数字符串拆为数组以遍历。Split the parameter string into an array for traversal.
+	var n = parameters.length;//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
+	var contentType = checked1?"application/octet-stream":undefined;//根据勾选1状态确定slice函数的第三个参数。 Determine the third parameter of slice function according to the status of checked1.
+	for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
+		if (parameters[i].indexOf("~") == -1) {//检查参数字符串是否无效。 Check whether the parameter string is invalid.
+			if (confirm("下标为" + i + "的部分参数中没有“~”号，不能确定具体参数，终止执行？\nThere is no \"~\" sign in parameter string with subscript " + i + ", so the specific parameters cannot be determined. Terminate?")) return;//发现无效字符串并弹出终止提示。 Find the invalid string and prompt the termination tips.
+			continue;//用户不打算终止，跳过本次循环。The user does not intend to terminate, skipping this loop.
+		}
+		var start = parameters[i].split("~",2);//分离出start参数，并存储在start数组的0下标位置。 The start parameter is separated and stored in the 0 subscript position of the start array.
+		var end = start[1].split(".",2);//分离出end参数和contentType参数，分别存储在end数组的0下标位置和1下标位置。 The end parameter and contenttype parameter are separated and stored in the 0 and 1 subscript positions of the end array respectively.
+		var sliced = blob.slice((start[0]?parseInt(start[0]):undefined),(end[0]?parseInt(end[0]):undefined),(end[1]?end[1]:contentType));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
+		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
+		aTag.download = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
+		aTag.href = URL.createObjectURL(sliced);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
+		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
+		URL.revokeObjectURL(sliced);//释放已经无用的URL对象。Release the used URL object.
+	}
 }
 </script>
 </html>
