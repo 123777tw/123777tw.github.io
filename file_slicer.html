@@ -49,8 +49,8 @@ function generateParameterList(contents, output, checked1) {//生成参数列表
 </script>
 <hr style="border:1px solid" /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
 高级文件拆分参数列表 Advanced file splitting parameter list
+<label style="display:block"><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--节点id会在上方和下方的文件选择节点的onclick事件中各引用一次。changeTips函数的实现在下面。 The node ID is referenced once each in the onclick atrributes of the file selection nodes above and below. The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
 <textarea id="ParameterList" style="display:block;width:90%" rows=5 placeholder="star~end,star~end...&#10;起始字节~结束字节,起始字节~结束字节……"></textarea><!--节点id会在此文件节点的onclick事件中引用多次。 The node ID will be referenced multiple times in onclick attributes of nodes within this file.-->
-<label><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--节点id会在上方和下方的文件选择节点的onclick事件中各引用一次。changeTips函数的实现在下面。 The node ID is referenced once each in the onclick atrributes of the file selection nodes above and below. The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
 <script>
 function changeTips(isChecked, textareaNode) {//修改提示(是否勾选，文本区域节点)
 	if(isChecked) {//勾选：使用默认值。Checked: use the default value.
