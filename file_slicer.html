@@ -21,7 +21,8 @@ function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（
 </script>
 <hr /><!--下面是附加的合并文件功能，用于还原被拆分的文件。The following is an additional merge file function for restoring split files.-->
 将它们合并回去 Merge them back
-<input type="file" style="display:block" multiple onchange="mergeAndDownloadFile('merged', this.files)" />
+<label style="display:block"><input id="CheckBox0" type="checkbox" checked /><!--节点id会在下方的文件选择节点的onclick事件中引用一次。 The node ID will be referenced once in the onclick attribute of the file selection node below.-->生成高级文件拆分参数列表<div style="display:inline-block;margin-left:20px">Generate advanced file splitting parameter list</div></label>
+<input type="file" style="display:block" multiple onchange="mergeAndDownloadFile('merged', this.files);if(document.getElementById('CheckBox0').checked){generateParameterList(this.files,document.getElementById('ParameterList'),document.getElementById('CheckBox1').checked);}" /><!--mergeAndDownloadFile和generateParameterList函数的实现在下面。 The implementation of the function mergeAndDownloadFile and generateParameterList are below.-->
 <script>
 function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（文件名，多个内容）
 	var blob = new Blob(contents, {type: 'application/octet-stream'});//将多个文件的主体合并转换为一个Blob对象，不考虑文件类型。merged the principals of multiple files into a blob object without regarding the file type.
@@ -31,11 +32,25 @@ function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（
 	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 	URL.revokeObjectURL(blob);//释放已经无用的URL对象。Release the used URL object.
 }
+function generateParameterList(contents, output, checked1) {//生成参数列表（多个内容，输出，勾选1）
+	if(!contents.length) {return;}//如果未选择任何文件立刻返回。If no file is selected, return immediately.
+	var parameterList = "";//用于存储预处理字符串。 Used to store preprocessed strings.
+	var offset = 0;//用于存储每部分的偏移字节数。 Used to store the number of offset bytes per part.
+	for(i = 0; i < contents.length; i ++) {//每次循环处理一个部分的分割参数。 Each cycle processes one part of the parameters.
+		parameterList += "," + offset;//追加逗号和起始字节。 Appending comma and start.
+		offset += contents[i].size;//根据文件大小计算结束字节。 Calculate end according to the file size.
+		parameterList += "~" + offset;//追加颚化符和结束字节。 Append tilde and end.
+		if(!checked1) {//判断勾选1状态。 Judge the status of checked1.
+			parameterList += "." + contents[i].type;//追加点号和文档类型。 Append dot and contentType.
+		}
+	}
+	output.value = parameterList.substring(1, parameterList.length);//去除最开始多余的逗号并输出到文本区域。 Remove the first redundant comma and output to the textarea.
+}
 </script>
 <hr style="border:1px solid" /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
 高级文件拆分参数列表 Advanced file splitting parameter list
 <textarea id="ParameterList" style="display:block;width:90%" rows=5 placeholder="star~end,star~end...&#10;起始字节~结束字节,起始字节~结束字节……"></textarea><!--节点id会在此文件节点的onclick事件中引用多次。 The node ID will be referenced multiple times in onclick attributes of nodes within this file.-->
-<label><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--changeTips函数的实现在下面。The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
+<label><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--节点id会在上方和下方的文件选择节点的onclick事件中各引用一次。changeTips函数的实现在下面。 The node ID is referenced once each in the onclick atrributes of the file selection nodes above and below. The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
 <script>
 function changeTips(isChecked, textareaNode) {//修改提示(是否勾选，文本区域节点)
 	if(isChecked) {//勾选：使用默认值。Checked: use the default value.
@@ -51,15 +66,23 @@ function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked
 	var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被循环引用。Converts the content of the file to a blob object, which will be referenced circularly.
 	var parameters = parameterList.split(",");//将参数字符串拆为数组以遍历。Split the parameter string into an array for traversal.
 	var n = parameters.length;//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
-	var contentType = checked1?"application/octet-stream":undefined;//根据勾选1状态确定slice函数的第三个参数。 Determine the third parameter of slice function according to the status of checked1.
+	var contentType = checked1?"application/octet-stream":undefined;//根据勾选1状态确定slice函数的第三个参数默认值。 Determine the third parameter default value of slice function according to the status of checked1.
 	for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
-		if (parameters[i].indexOf("~") == -1) {//检查参数字符串是否无效。 Check whether the parameter string is invalid.
+		var indexOfTilde = parameters[i].indexOf("~");//获取颚化符首次出现的位置。 Get the position where the tilde first appears.
+		if(indexOfTilde == -1) {//检查参数字符串是否无效。 Check whether the parameter string is invalid.
 			if (confirm("下标为" + i + "的部分参数中没有“~”号，不能确定具体参数，终止执行？\nThere is no \"~\" sign in parameter string with subscript " + i + ", so the specific parameters cannot be determined. Terminate?")) return;//发现无效字符串并弹出终止提示。 Find the invalid string and prompt the termination tips.
 			continue;//用户不打算终止，跳过本次循环。The user does not intend to terminate, skipping this loop.
 		}
-		var start = parameters[i].split("~",2);//分离出start参数，并存储在start数组的0下标位置。 The start parameter is separated and stored in the 0 subscript position of the start array.
-		var end = start[1].split(".",2);//分离出end参数和contentType参数，分别存储在end数组的0下标位置和1下标位置。 The end parameter and contenttype parameter are separated and stored in the 0 and 1 subscript positions of the end array respectively.
-		var sliced = blob.slice((start[0]?parseInt(start[0]):undefined),(end[0]?parseInt(end[0]):undefined),(end[1]?end[1]:contentType));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
+		var start = parameters[i].substring(0,indexOfTilde);//分离start参数。 Separate the start parameter.
+		var indexOfDot = parameters[i].indexOf(".");//获取点号首次出现的位置。 Get the position where the dot first appears.
+		var end = "";//用于存储end参数。 Used to store the end parameter.
+		if(indexOfDot == -1) {//判断是否未指定contentType参数。 Determine whether the contentType parameter is not specified.
+			end = parameters[i].substring(indexOfTilde);//分离end参数。 Separate the end parameter.
+		} else {//指定了contentType参数。 The contentType parameter is specified.
+			end = parameters[i].substring(indexOfTilde + 1,indexOfDot);//分离end参数。 Separate the end parameter.
+			contentType = parameters[i].substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
+		}
+		var sliced = blob.slice((start?parseInt(start):undefined),(end?parseInt(end):undefined),(contentType?contentType:undefined));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
 		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
 		aTag.download = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
 		aTag.href = URL.createObjectURL(sliced);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
