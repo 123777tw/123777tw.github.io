@@ -1,7 +1,26 @@
 <html>
+<head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><!--声明此文件的编码格式是UTF-8，用于提高与其他环境的兼容性。 Declare that the encoding format of this file is UTF-8, which is used to improve the compatibility with other environments.-->
 <title>文件分割 File Slicer</title>
 <!--这是一个在内存操作文件的工具，请注意内存占用。 This is a tool for operating files in memory. Please pay attention to memory usage.-->
+<script>
+function getPreferences() {//获取偏好（）
+	var searchString = window.location.search.replace("?", "&");//存储地址参数字符串。 Store the search string.
+	if(!searchString) {return;}//如果没有参数字符串立刻返回。 Returned immediately if no search string.
+	var checkPreferenceIndex = searchString.lastIndexOf("&check=");//查找并存储最后一个勾选偏好的位置。 Find and store the index of the last check preference.
+	if(checkPreferenceIndex != -1) {//如果指定了勾选偏好。 If a check preference are specified.
+		var checkPreferencePreprocessingString = searchString.substring(checkPreferenceIndex);//处理并存储勾选偏好预处理字符串。 Process and store the check preference preprocessing string.
+		var checkPreferenceStringEndIndex = checkPreferencePreprocessingString.indexOf("&");//查找并存储参数分隔符位置。 Find and store the parameter separator index.
+		var checkPreference = parseInt(checkPreferencePreprocessingString.substring(7,checkPreferenceStringEndIndex ? checkPreferenceStringEndIndex : undefined));//将传入的勾选偏好处理成整数形式并储存。 Process the incoming check preference into integer form and store it.
+		//开始：按照二进制位从低到高设置对应勾选节点。 Start: Set the corresponding checkbox node status from low to high according to the binary bit.
+		document.getElementById("CheckBox0").checked = checkPreference & 1;
+		document.getElementById("CheckBox1").checked = checkPreference >> 1 & 1;
+		//结束。 End.
+	}
+}
+</script>
+</head>
+<body onload="getPreferences();"><!--getPreference函数的实现在头部标签内。 The implementation of the function sliceAndDownloadFiles is in head tag.-->
 <label><input type="text" id="SizePerFile" value="1048576" /><!--节点id在sliceAndDownloadFiles函数（实现在本文件内）中会被引用1次。1048576=1M The node id will be referenced once in the function sliceAndDownloadFiles (implemented in this file).-->字节每文件 Bytes per file</label>
 <input type="file" style="display:block" onchange="sliceAndDownloadFiles('s',this.files[0])" /><!--sliceAndDownloadFiles函数的实现在下面。The implementation of the function sliceAndDownloadFiles is below.-->
 <script>
@@ -21,7 +40,7 @@ function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（
 </script>
 <hr /><!--下面是附加的合并文件功能，用于还原被拆分的文件。The following is an additional merge file function for restoring split files.-->
 将它们合并回去 Merge them back
-<label style="display:block"><input id="CheckBox0" type="checkbox" checked /><!--节点id会在下方的文件选择节点的onclick事件中引用一次。 The node ID will be referenced once in the onclick attribute of the file selection node below.-->生成高级文件拆分参数列表<div style="display:inline-block;margin-left:20px">Generate advanced file splitting parameter list</div></label>
+<label style="display:block"><input id="CheckBox0" type="checkbox" checked /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->生成高级文件拆分参数列表<div style="display:inline-block;margin-left:20px">Generate advanced file splitting parameter list</div></label>
 <input type="file" style="display:block" multiple onchange="mergeAndDownloadFile('merged', this.files);if(document.getElementById('CheckBox0').checked){generateParameterList(this.files,document.getElementById('ParameterList'),document.getElementById('CheckBox1').checked);}" /><!--mergeAndDownloadFile和generateParameterList函数的实现在下面。 The implementation of the function mergeAndDownloadFile and generateParameterList are below.-->
 <script>
 function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（文件名，多个内容）
@@ -49,7 +68,7 @@ function generateParameterList(contents, output, checked1) {//生成参数列表
 </script>
 <hr style="border:1px solid" /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
 高级文件拆分参数列表 Advanced file splitting parameter list
-<label style="display:block"><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--节点id会在上方和下方的文件选择节点的onclick事件中各引用一次。changeTips函数的实现在下面。 The node ID is referenced once each in the onclick atrributes of the file selection nodes above and below. The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
+<label style="display:block"><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--所有勾选节点id在本文件内将会被多次引用。changeTips函数的实现在下面。 All checkbox node IDs will be referenced many times in this file. The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
 <textarea id="ParameterList" style="display:block;width:90%" rows=5 placeholder="star~end,star~end...&#10;起始字节~结束字节,起始字节~结束字节……"></textarea><!--节点id会在此文件节点的onclick事件中引用多次。 The node ID will be referenced multiple times in onclick attributes of nodes within this file.-->
 <script>
 function changeTips(isChecked, textareaNode) {//修改提示(是否勾选，文本区域节点)
@@ -91,4 +110,5 @@ function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked
 	}
 }
 </script>
+</body>
 </html>
