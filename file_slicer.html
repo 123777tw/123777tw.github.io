@@ -10,8 +10,8 @@ function getPreferences() {//获取偏好（）
 	var checkPreferenceIndex = searchString.lastIndexOf("&check=");//查找并存储最后一个勾选偏好的位置。 Find and store the index of the last check preference.
 	if(checkPreferenceIndex != -1) {//如果指定了勾选偏好。 If a check preference are specified.
 		var checkPreferencePreprocessingString = searchString.substring(checkPreferenceIndex);//处理并存储勾选偏好预处理字符串。 Process and store the check preference preprocessing string.
-		var checkPreferenceStringEndIndex = checkPreferencePreprocessingString.indexOf("&");//查找并存储勾选偏好结束位置。 Find and store the check preference end index.
-		var checkPreference = parseInt(checkPreferencePreprocessingString.substring(7,checkPreferenceStringEndIndex ? checkPreferenceStringEndIndex : undefined));//将传入的勾选偏好处理成整数形式并储存。 Process the incoming check preference into integer form and store it.
+		var checkPreferenceStringEndIndex = checkPreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储勾选偏好结束位置。 Find and store the check preference end index.
+		var checkPreference = parseInt(checkPreferencePreprocessingString.substring(7, checkPreferenceStringEndIndex ? checkPreferenceStringEndIndex : undefined));//将传入的勾选偏好处理成整数形式并储存。 Process the incoming check preference into integer form and store it.
 		//开始：按照二进制位从低到高设置对应勾选节点。 Start: Set the corresponding checkbox node status from low to high according to the binary bit.
 		document.getElementById("CheckBox0").checked = checkPreference & 1;
 		document.getElementById("CheckBox1").checked = checkPreference >> 1 & 1;
@@ -20,8 +20,8 @@ function getPreferences() {//获取偏好（）
 	var sizePerFilePreferenceIndex = searchString.lastIndexOf("&sizePerFile=");//查找并存储最后一个每文件字节数偏好的位置。 Find and store the index of the last size per file preference.
 	if(sizePerFilePreferenceIndex != -1) {//如果指定了每文件字节数偏好。 If a size per file preference are specified.
 		var sizePerFilePreferencePreprocessingString = searchString.substring(sizePerFilePreferenceIndex);//处理并存储每文件字节数偏好预处理字符串。 Process and store the size per file preference preprocessing string.
-		var sizePerFilePreferenceStringEndIndex = sizePerFilePreferencePreprocessingString.indexOf("&");//查找并存储每文件字节数偏好结束位置。 Find and store the size per file preference end index.
-		document.getElementById("SizePerFile").value = sizePerFilePreferencePreprocessingString.substring(13,sizePerFilePreferenceStringEndIndex ? sizePerFilePreferenceStringEndIndex : undefined);//将传入的每文件字节数偏好输出到指定输入框。 Output the incoming size per file preference to specified input box.
+		var sizePerFilePreferenceStringEndIndex = sizePerFilePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储每文件字节数偏好结束位置。 Find and store the size per file preference end index.
+		document.getElementById("SizePerFile").value = sizePerFilePreferencePreprocessingString.substring(13, sizePerFilePreferenceStringEndIndex ? sizePerFilePreferenceStringEndIndex : undefined);//将传入的每文件字节数偏好输出到指定输入框。 Output the incoming size per file preference to specified input box.
 	}
 	var parameterPreferenceIndex = searchString.lastIndexOf("&parameter=");//查找并存储最后一个参数列表偏好的位置。 Find and store the index of the last parameter list preference.
 	if(parameterPreferenceIndex != -1) {//如果指定了参数列表偏好。 If a parameter list preference are specified.
