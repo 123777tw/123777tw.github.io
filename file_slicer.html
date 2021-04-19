@@ -17,11 +17,17 @@ function getPreferences() {//获取偏好（）
 		document.getElementById("CheckBox1").checked = checkPreference >> 1 & 1;
 		//结束。 End.
 	}
+	var sizePerFilePreferenceIndex = searchString.lastIndexOf("&sizePerFile=");//查找并存储最后一个每文件字节数偏好的位置。 Find and store the index of the last size per file preference.
+	if(sizePerFilePreferenceIndex != -1) {//如果指定了每文件字节数偏好。 If a size per file preference are specified.
+		var sizePerFilePreferencePreprocessingString = searchString.substring(sizePerFilePreferenceIndex);//处理并存储每文件字节数偏好预处理字符串。 Process and store the size per file preference preprocessing string.
+		var sizePerFilePreferenceStringEndIndex = sizePerFilePreferencePreprocessingString.indexOf("&");//查找并存储每文件字节数偏好结束位置。 Find and store the size per file preference end index.
+		document.getElementById("SizePerFile").value = sizePerFilePreferencePreprocessingString.substring(13,sizePerFilePreferenceStringEndIndex ? sizePerFilePreferenceStringEndIndex : undefined);//将传入的每文件字节数偏好输出到指定输入框。 Output the incoming size per file preference to specified input box.
+	}
 	var parameterPreferenceIndex = searchString.lastIndexOf("&parameter=");//查找并存储最后一个参数列表偏好的位置。 Find and store the index of the last parameter list preference.
 	if(parameterPreferenceIndex != -1) {//如果指定了参数列表偏好。 If a parameter list preference are specified.
 		var parameterPreferencePreprocessingString = searchString.substring(parameterPreferenceIndex);//处理并存储参数列表偏好预处理字符串。 Process and store the parameter list preference preprocessing string.
 		var parameterPreferenceStringEndIndex = parameterPreferencePreprocessingString.indexOf("&");//查找并存储参数列表偏好结束位置。 Find and store the parameter list preference end index.
-		document.getElementById("ParameterList").value = decodeURIComponent(parameterPreferencePreprocessingString.substring(11,parameterPreferenceStringEndIndex ? parameterPreferenceStringEndIndex : undefined));//将传入的勾选偏好解码并输出到指定文本区域。 Decode the incoming check preference and output it to specified textarea.
+		document.getElementById("ParameterList").value = decodeURIComponent(parameterPreferencePreprocessingString.substring(11,parameterPreferenceStringEndIndex ? parameterPreferenceStringEndIndex : undefined));//将传入的参数列表偏好解码并输出到指定文本区域。 Decode the incoming the parameter list preference and output it to specified textarea.
 	}
 }
 </script>
@@ -134,7 +140,7 @@ function generatePreferenceLink(before, searchString, after) {//生成偏好链�
 		before.innerHTML = currentURL;//所剩内容均为参数之前的字符串。 All that remains is the string before the search string.
 		currentURL = "";//清空缓存字符串。 Clear the cache string.
 	}
-	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1)).toString() + (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
+	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1)).toString() + (document.getElementById("SizePerFile").value == "1048576" ? "" : "&#38sizePerFile=" + document.getElementById("SizePerFile").value) + (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
 }
 </script>
 </body>
