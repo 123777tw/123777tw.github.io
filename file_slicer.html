@@ -72,7 +72,7 @@ function generateParameterList(contents, output, checked1) {//生成参数列表
 	output.value = parameterList.substring(1, parameterList.length);//去除最开始多余的逗号并输出到文本区域。 Remove the first redundant comma and output to the textarea.
 }
 </script>
-<hr style="border:1px solid" /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
+<hr /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
 高级文件拆分参数列表 Advanced file splitting parameter list
 <label style="display:block"><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--所有勾选节点id在本文件内将会被多次引用。changeTips函数的实现在下面。 All checkbox node IDs will be referenced many times in this file. The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
 <textarea id="ParameterList" style="display:block;width:90%" rows=5 placeholder="star~end,star~end...&#10;起始字节~结束字节,起始字节~结束字节……"></textarea><!--节点id会在本文件内将会被多次引用。 The node ID will be referenced many times in this file.-->
@@ -114,6 +114,27 @@ function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked
 		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 		URL.revokeObjectURL(sliced);//释放已经无用的URL对象。Release the used URL object.
 	}
+}
+</script>
+<hr style="border:1px solid" /><!--针对有偏好传入支持的页面额外添加的偏好链接生成器。-->
+<div style="border:1px solid;word-break:break-all"><button type="button" onclick="generatePreferenceLink(this.nextElementSibling,this.nextElementSibling.nextElementSibling,this.nextElementSibling.nextElementSibling.nextElementSibling)">★</button><!--generatePreferenceLink函数的实现在下面。The implementation of the function generatePreferenceLink is below.--><span style="color:grey">点击星星生成偏好链接。 Click the star to generate preference link.</span><span></span><span style="color:Green"></span></div>
+<script>
+function generatePreferenceLink(before, searchString, after) {//生成偏好链接（之前，参数字符串，之后）
+	var currentURL = window.location.href;//缓存当前页面完整的URL字符串，用于获取其中的参数之前的字符串和锚点字符串。请注意，仍然有少数浏览器不支持window.loaction.origin。 Cache the complete URL string of the current page, which is used to obtain the string before the search string and the hash string. Note that there are still a few browsers that don't support window.loaction.origin .
+	var afterIndex = currentURL.indexOf("#");//获取锚点字符串的起始位置。 Get the starting position of the hash string.
+	if (afterIndex > -1) {//如果存在锚点字符串。 If the hash string exists.
+		after.innerHTML = currentURL.substring(afterIndex);//取出锚点字符串。 Obtain the hash string.
+		currentURL = currentURL.substring(0,afterIndex);//移除锚点字符串。 Remove the hash string.
+	}
+	var beforeIndex = currentURL.indexOf("#");//获取参数字符串的起始位置。 Get the starting position of the search string.
+	if (beforeIndex > -1) {//如果存在锚点字符串。 If the search string exists.
+		before.innerHTML = currentURL.substring(0,beforeIndex);//取出参数之前的字符串。 Obtain the string before the search string.
+		currentURL = currentURL.substring(beforeIndex);//移除参数之前字符串。 Remove the string before the search string.
+	} else {//如果不存在锚点字符串。 If the search string doesn't exist.
+		before.innerHTML = currentURL;//所剩内容均为参数之前的字符串。 All that remains is the string before the search string.
+		currentURL = "";//清空缓存字符串。 Clear the cache string.
+	}
+	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1)).toString() + (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
 }
 </script>
 </body>
