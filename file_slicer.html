@@ -108,7 +108,7 @@ function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked
 		var indexOfDot = parameters[i].indexOf(".");//获取点号首次出现的位置。 Get the position where the dot first appears.
 		var end = "";//用于存储end参数。 Used to store the end parameter.
 		if(indexOfDot == -1) {//判断是否未指定contentType参数。 Determine whether the contentType parameter is not specified.
-			end = parameters[i].substring(indexOfTilde);//分离end参数。 Separate the end parameter.
+			end = parameters[i].substring(indexOfTilde + 1);//分离end参数。 Separate the end parameter.
 		} else {//指定了contentType参数。 The contentType parameter is specified.
 			end = parameters[i].substring(indexOfTilde + 1,indexOfDot);//分离end参数。 Separate the end parameter.
 			contentType = parameters[i].substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
