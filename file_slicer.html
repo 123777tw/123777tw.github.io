@@ -41,12 +41,9 @@ function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（
 	var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被多次引用。Converts the content of the file to a blob object, which will be referenced many times.
 	var n = Math.ceil(blob.size/s);//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
 	for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
-		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
 		var sliced = blob.slice(s*i,s*(i+1),'application/octet-stream');//取出分割部分，不考虑文件类型。Take out the split part without regarding the file type.
-		aTag.download = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
-		aTag.href = URL.createObjectURL(sliced);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
-		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
-		URL.revokeObjectURL(sliced);//释放已经无用的URL对象。Release the used URL object.
+		var slicedFileName = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
+		downloadFunction(slicedFileName, sliced);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 	}
 }
 </script>
@@ -57,11 +54,7 @@ function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（
 <script>
 function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（文件名，多个内容）
 	var blob = new Blob(contents, {type: 'application/octet-stream'});//将多个文件的主体合并转换为一个Blob对象，不考虑文件类型。merged the principals of multiple files into a blob object without regarding the file type.
-	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
-	aTag.download = fileName;//设置下载文件的文件名。Set the file name of the download file.
-	aTag.href = URL.createObjectURL(blob);//将<a>节点的链接绑定到已经合并的文件。Bind the link of <a> node to the merged file.
-	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
-	URL.revokeObjectURL(blob);//释放已经无用的URL对象。Release the used URL object.
+	downloadFunction(fileName, blob);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 }
 function generateParameterList(contents, output, checked1) {//生成参数列表（多个内容，输出，勾选1）
 	if(!contents.length) {return;}//如果未选择任何文件立刻返回。If no file is selected, return immediately.
@@ -114,15 +107,31 @@ function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked
 			contentType = parameters[i].substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
 		}
 		var sliced = blob.slice((start?parseInt(start):undefined),(end?parseInt(end):undefined),(contentType?contentType:undefined));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
-		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
-		aTag.download = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
-		aTag.href = URL.createObjectURL(sliced);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
-		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
-		URL.revokeObjectURL(sliced);//释放已经无用的URL对象。Release the used URL object.
+		var slicedFileName = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
+		downloadFunction(slicedFileName, sliced);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 	}
 }
 </script>
-<hr style="border:1px solid" /><!--针对有偏好传入支持的页面额外添加的偏好链接生成器。-->
+<hr style="border:1px solid" /><!--避免造成大量并发下载的手动下载列表。 Add manual download list to avoid a large number of concurrent downloads.-->
+<label style="display:block"><input id="CheckBox2" type="checkbox" /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->生成手动下载列表<div style="display:inline-block;margin-left:20px">Generate manual download list</div></label>
+<ol></ol>
+<script>
+function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数便于维护。 Put the download function into independent function for easy maintenance.
+	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
+	aTag.download = fileName;//指定下载文件名。Specify the download file name.
+	aTag.href = URL.createObjectURL(fileBlob);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
+	if(document.getElementById("CheckBox2").checked) {//如果勾选了手动下载列表。 If manual download list is checked.
+		aTag.innerHTML = fileName;//将文件名作为a标签的填充内容。 Use the fileName as the padding for the "a" tag.
+		var liTag = document.createElement('li');//使用li标签规划列表。 Use “li” tags to planning the list.
+		liTag.appendChild(aTag);//将a标签套入li标签。 Insert the "a" tag into the "li" tag.
+		document.getElementById("CheckBox2").parentNode.nextElementSibling.appendChild(liTag);//将li标签插入前端的ol标签。 Insert the "li" tag into the front end "ol" tag.
+	} else {//自动并发下载。 Automatic concurrent download.
+		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
+		URL.revokeObjectURL(aTag.href);//释放已经无用的URL对象。Release the used URL object.
+	}
+}
+</script>
+<hr style="border:1px solid" /><!--针对有偏好传入支持的页面额外添加的偏好链接生成器。 The additional preference link generators are added for pages with preference input support.-->
 <div style="border:1px solid;word-break:break-all"><button type="button" onclick="generatePreferenceLink(this.nextElementSibling,this.nextElementSibling.nextElementSibling,this.nextElementSibling.nextElementSibling.nextElementSibling)">★</button><!--generatePreferenceLink函数的实现在下面。The implementation of the function generatePreferenceLink is below.--><span style="color:grey">点击星星生成偏好链接。 Click the star to generate preference link.</span><span></span><span style="color:Green"></span></div>
 <script>
 function generatePreferenceLink(before, searchString, after) {//生成偏好链接（之前，参数字符串，之后）
