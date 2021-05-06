@@ -15,6 +15,7 @@ function getPreferences() {//获取偏好（）
 		//开始：按照二进制位从低到高设置对应勾选节点。 Start: Set the corresponding checkbox node status from low to high according to the binary bit.
 		document.getElementById("CheckBox0").checked = checkPreference & 1;
 		document.getElementById("CheckBox1").checked = checkPreference >> 1 & 1;
+		document.getElementById("CheckBox2").checked = checkPreference >> 2 & 1;
 		//结束。 End.
 	}
 	var sizePerFilePreferenceIndex = searchString.lastIndexOf("&sizePerFile=");//查找并存储最后一个每文件字节数偏好的位置。 Find and store the index of the last size per file preference.
@@ -149,7 +150,7 @@ function generatePreferenceLink(before, searchString, after) {//生成偏好链�
 		before.innerHTML = currentURL;//所剩内容均为参数之前的字符串。 All that remains is the string before the search string.
 		currentURL = "";//清空缓存字符串。 Clear the cache string.
 	}
-	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1)).toString() + (document.getElementById("SizePerFile").value == "1048576" ? "" : "&#38sizePerFile=" + document.getElementById("SizePerFile").value) + (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
+	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1) + (document.getElementById("CheckBox2").checked << 2)).toString() + (document.getElementById("SizePerFile").value == "1048576" ? "" : "&#38sizePerFile=" + document.getElementById("SizePerFile").value) + (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
 }
 </script>
 </body>
