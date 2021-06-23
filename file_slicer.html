@@ -116,6 +116,7 @@ function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked
 <hr style="border:1px solid" /><!--避免造成大量并发下载的手动下载列表。 Add manual download list to avoid a large number of concurrent downloads.-->
 <label style="display:block"><input id="CheckBox2" type="checkbox" /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->生成手动下载列表<div style="display:inline-block;margin-left:20px">Generate manual download list</div></label>
 <ol></ol>
+<button type="button" onclick="downloadAll1by1(this.previousElementSibling.children, this.nextElementSibling.firstElementChild.value)" style="text-decoration:underline">↓</button><label><input type="text" value="1000" />毫秒每文件 Millisecond per file</label><!--间歇下载所有文件。downloadAll1by1函数的实现在下方。 Download all files intermittently. The implementation of the downloadAll1by1 function is below.-->
 <script>
 function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数便于维护。 Put the download function into independent function for easy maintenance.
 	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
@@ -138,6 +139,14 @@ function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数�
 function deleteLiTag(blobURL, liNode) {//删除li标签（二进制链接串，li节点） 创建此函数是因为其中引用了无法在onclick属性中被调用的函数。 This function was created because it references a function that cannot be called in onclick properties.
 	URL.revokeObjectURL(blobURL);//释放指定的URL对象。注意此步骤无法在onclick属性内部直接调用。 Releases the specified URL object. Note that this step cannot be called directly inside the onclick property.
 	liNode.remove();//删除li节点。 Delete the li node.
+}
+function downloadAll1by1(olNodeChildren, interval) {//一个一个下载（序列节点，间隔）
+	var i = olNodeChildren.length;//获取列表项计数。 Gets the count of list items.
+	var id = setInterval(function(){//创建间歇循环任务，并记录任务id。 Create an intermittent cycle task and record the task ID.
+		if(i == 0) {clearInterval(id);return;}//如果没有剩余下载项，终止循环任务并退出函数。 If there are no downloads left, terminate the loop task and exit the function.
+		olNodeChildren[i-1].firstElementChild.click();//模拟点击剩余项中的最后一项触发下载。 Simulate clicking the last of the remaining items to trigger the download.
+		i--;//将剩余项向前收缩一项。 Shrink the remaining items forward by one item.
+	}, interval);//传入间歇时间。 Afferent the interval time.
 }
 </script>
 <hr style="border:1px solid" /><!--针对有偏好传入支持的页面额外添加的偏好链接生成器。 The additional preference link generators are added for pages with preference input support.-->
