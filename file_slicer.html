@@ -125,11 +125,19 @@ function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数�
 		aTag.innerHTML = fileName;//将文件名作为a标签的填充内容。 Use the fileName as the padding for the "a" tag.
 		var liTag = document.createElement('li');//使用li标签规划列表。 Use “li” tags to planning the list.
 		liTag.appendChild(aTag);//将a标签套入li标签。 Insert the "a" tag into the "li" tag.
+		var deleteSign = document.createElement('button');//创建删除按钮。 Create delete button.
+		deleteSign.innerHTML = "x";//设置删除按钮中的显示内容。 Set the display content in the delete button.
+		deleteSign.setAttribute("onclick","deleteLiTag('" + aTag.href + "', this.parentNode)");//设置删除按钮的点击行为。deleteLiTag函数的实现在下方。 Set the click behavior of the delete button. The implementation of the deleteLiTag function is below.
+		liTag.appendChild(deleteSign);
 		document.getElementById("CheckBox2").parentNode.nextElementSibling.appendChild(liTag);//将li标签插入前端的ol标签。 Insert the "li" tag into the front end "ol" tag.
 	} else {//自动并发下载。 Automatic concurrent download.
 		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 		URL.revokeObjectURL(aTag.href);//释放已经无用的URL对象。Release the used URL object.
 	}
+}
+function deleteLiTag(blobURL, liNode) {//删除li标签（二进制链接串，li节点） 创建此函数是因为其中引用了无法在onclick属性中被调用的函数。 This function was created because it references a function that cannot be called in onclick properties.
+	URL.revokeObjectURL(blobURL);//释放指定的URL对象。注意此步骤无法在onclick属性内部直接调用。 Releases the specified URL object. Note that this step cannot be called directly inside the onclick property.
+	liNode.remove();//删除li节点。 Delete the li node.
 }
 </script>
 <hr style="border:1px solid" /><!--针对有偏好传入支持的页面额外添加的偏好链接生成器。 The additional preference link generators are added for pages with preference input support.-->
