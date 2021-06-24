@@ -30,11 +30,17 @@ function getPreferences() {//获取偏好（）
 		var parameterPreferenceStringEndIndex = parameterPreferencePreprocessingString.indexOf("&");//查找并存储参数列表偏好结束位置。 Find and store the parameter list preference end index.
 		document.getElementById("ParameterList").value = decodeURIComponent(parameterPreferencePreprocessingString.substring(11,parameterPreferenceStringEndIndex ? parameterPreferenceStringEndIndex : undefined));//将传入的参数列表偏好解码并输出到指定文本区域。 Decode the incoming the parameter list preference and output it to specified textarea.
 	}
+	var millisecondPerFilePreferenceIndex = searchString.lastIndexOf("&millisecondPerFile=");//查找并存储最后一个每文件毫秒数偏好的位置。 Find and store the index of the last millisecond per file preference.
+	if(millisecondPerFilePreferenceIndex != -1) {//如果指定了每文件毫秒数偏好。 If a millisecond per file preference are specified.
+		var millisecondPerFilePreferencePreprocessingString = searchString.substring(millisecondPerFilePreferenceIndex);//处理并存储每文件毫秒数偏好预处理字符串。 Process and store the millisecond per file preference preprocessing string.
+		var millisecondPerFilePreferenceStringEndIndex = millisecondPerFilePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储每文件毫秒数偏好结束位置。 Find and store the millisecond per file preference end index.
+		document.getElementById("MillisecondPerFile").value = millisecondPerFilePreferencePreprocessingString.substring(20, millisecondPerFilePreferenceStringEndIndex ? millisecondPerFilePreferenceStringEndIndex : undefined);//将传入的每文件毫秒数偏好输出到指定输入框。 Output the incoming millisecond per file preference to specified input box.
+	}
 }
 </script>
 </head>
 <body onload="getPreferences();"><!--getPreference函数的实现在头部标签内。 The implementation of the function sliceAndDownloadFiles is in head tag.-->
-<label><input type="text" id="SizePerFile" value="1048576" /><!--节点id在sliceAndDownloadFiles函数（实现在本文件内）中会被引用1次。1048576=1M The node id will be referenced once in the function sliceAndDownloadFiles (implemented in this file).-->字节每文件 Bytes per file</label>
+<label><input type="text" id="SizePerFile" value="1048576" /><!--节点id会在sliceAndDownloadFiles函数实现中和偏好设置中被引用（在本文件内）。1048576=1M The node id will be referenced in the function sliceAndDownloadFiles implementation and the preference settings (in this file).-->字节每文件 Bytes per file</label>
 <input type="file" style="display:block" onchange="sliceAndDownloadFiles('s',this.files[0])" /><!--sliceAndDownloadFiles函数的实现在下面。The implementation of the function sliceAndDownloadFiles is below.-->
 <script>
 function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（文件名，内容）
@@ -116,7 +122,7 @@ function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked
 <hr style="border:1px solid" /><!--避免造成大量并发下载的手动下载列表。 Add manual download list to avoid a large number of concurrent downloads.-->
 <label style="display:block"><input id="CheckBox2" type="checkbox" /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->生成手动下载列表<div style="display:inline-block;margin-left:20px">Generate manual download list</div></label>
 <ol></ol>
-<button type="button" onclick="downloadAll1by1(this.previousElementSibling.children, this.nextElementSibling.firstElementChild.value)" style="text-decoration:underline">↓</button><label><input type="text" value="1000" />毫秒每文件 Millisecond per file</label><!--间歇下载所有文件。downloadAll1by1函数的实现在下方。 Download all files intermittently. The implementation of the downloadAll1by1 function is below.-->
+<button type="button" onclick="downloadAll1by1(this.previousElementSibling.children, this.nextElementSibling.firstElementChild.value)" style="text-decoration:underline">↓</button><label><input type="text" id="MillisecondPerFile" value="1000" />毫秒每文件 Millisecond per file</label><!--间歇下载所有文件。downloadAll1by1函数的实现在下方。id被偏好设置引用。 Download all files intermittently. The implementation of the downloadAll1by1 function is below. Id is referenced by preference settings.-->
 <script>
 function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数便于维护。 Put the download function into independent function for easy maintenance.
 	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
@@ -167,7 +173,10 @@ function generatePreferenceLink(before, searchString, after) {//生成偏好链�
 		before.innerHTML = currentURL;//所剩内容均为参数之前的字符串。 All that remains is the string before the search string.
 		currentURL = "";//清空缓存字符串。 Clear the cache string.
 	}
-	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1) + (document.getElementById("CheckBox2").checked << 2)).toString() + (document.getElementById("SizePerFile").value == "1048576" ? "" : "&#38sizePerFile=" + document.getElementById("SizePerFile").value) + (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
+	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1) + (document.getElementById("CheckBox2").checked << 2)).toString()
+		+ (document.getElementById("SizePerFile").value == "1048576" ? "" : "&#38sizePerFile=" + document.getElementById("SizePerFile").value)
+		+ (document.getElementById("MillisecondPerFile").value == "1000" ? "" : "&#38millisecondPerFile=" + document.getElementById("MillisecondPerFile").value)
+		+ (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
 }
 </script>
 </body>
