@@ -91,7 +91,7 @@ function changeTips(isChecked, textareaNode) {//修改提示(是否勾选，文�
 	}
 }
 </script>
-<input type="file" style="display:block" multiple onchange="advancedSliceAndDownloadFiles(['s'],this.files,document.getElementById('ParameterList').value.split('\n'),document.getElementById('CheckBox1').checked)" /><!--advancedSliceAndDownloadFiles函数的实现在下面。The implementation of the function advancedSliceAndDownloadFiles is below.-->
+<input type="file" style="display:block" multiple onchange="advancedSliceAndDownloadFiles([],this.files,document.getElementById('ParameterList').value.split('\n'),document.getElementById('CheckBox1').checked)" /><!--advancedSliceAndDownloadFiles函数的实现在下面。The implementation of the function advancedSliceAndDownloadFiles is below.-->
 <script>
 function advancedSliceAndDownloadFiles(forceFileNames, contents, parameterLists, checked1) {//高级拆分并且下载文件（强制文件名，内容，参数列表，勾选1）
 	for(var cc = 0; cc < contents.length && cc < parameterLists.length; cc ++) {//支持多文件批量分割。 Support multi file batch slicing.
