@@ -91,31 +91,38 @@ function changeTips(isChecked, textareaNode) {//修改提示(是否勾选，文�
 	}
 }
 </script>
-<input type="file" style="display:block" onchange="advancedSliceAndDownloadFiles('s',this.files[0],document.getElementById('ParameterList').value,document.getElementById('CheckBox1').checked)" /><!--advancedSliceAndDownloadFiles函数的实现在下面。The implementation of the function advancedSliceAndDownloadFiles is below.-->
+<input type="file" style="display:block" multiple onchange="advancedSliceAndDownloadFiles(['s'],this.files,document.getElementById('ParameterList').value.split('\n'),document.getElementById('CheckBox1').checked)" /><!--advancedSliceAndDownloadFiles函数的实现在下面。The implementation of the function advancedSliceAndDownloadFiles is below.-->
 <script>
-function advancedSliceAndDownloadFiles(fileName, content, parameterList, checked1) {//高级拆分并且下载文件（文件名，内容，参数列表，勾选1）
-	var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被循环引用。Converts the content of the file to a blob object, which will be referenced circularly.
-	var parameters = parameterList.split(",");//将参数字符串拆为数组以遍历。Split the parameter string into an array for traversal.
-	var n = parameters.length;//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
-	var contentType = checked1?"application/octet-stream":undefined;//根据勾选1状态确定slice函数的第三个参数默认值。 Determine the third parameter default value of slice function according to the status of checked1.
-	for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
-		var indexOfTilde = parameters[i].indexOf("~");//获取颚化符首次出现的位置。 Get the position where the tilde first appears.
-		if(indexOfTilde == -1) {//检查参数字符串是否无效。 Check whether the parameter string is invalid.
-			if (confirm("下标为" + i + "的部分参数中没有“~”号，不能确定具体参数，终止执行？\nThere is no \"~\" sign in parameter string with subscript " + i + ", so the specific parameters cannot be determined. Terminate?")) return;//发现无效字符串并弹出终止提示。 Find the invalid string and prompt the termination tips.
-			continue;//用户不打算终止，跳过本次循环。The user does not intend to terminate, skipping this loop.
+function advancedSliceAndDownloadFiles(forceFileNames, contents, parameterLists, checked1) {//高级拆分并且下载文件（强制文件名，内容，参数列表，勾选1）
+	for(var cc = 0; cc < contents.length && cc < parameterLists.length; cc ++) {//支持多文件批量分割。 Support multi file batch slicing.
+		//开始：支持多文件批量分割时的最小代码改动。 Start: Minimum code changes of supporting multi file batch slicing.
+		var parameterList = parameterLists[cc];
+		var content = contents[cc];
+		var fileName = forceFileNames[cc] ? forceFileNames[cc] : contents[cc].name;
+		//结束。 End.
+		var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被循环引用。Converts the content of the file to a blob object, which will be referenced circularly.
+		var parameters = parameterList.split(",");//将参数字符串拆为数组以遍历。Split the parameter string into an array for traversal.
+		var n = parameters.length;//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
+		var contentType = checked1?"application/octet-stream":undefined;//根据勾选1状态确定slice函数的第三个参数默认值。 Determine the third parameter default value of slice function according to the status of checked1.
+		for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
+			var indexOfTilde = parameters[i].indexOf("~");//获取颚化符首次出现的位置。 Get the position where the tilde first appears.
+			if(indexOfTilde == -1) {//检查参数字符串是否无效。 Check whether the parameter string is invalid.
+				if (confirm("下标为" + i + "的部分参数中没有“~”号，不能确定具体参数，终止执行？\nThere is no \"~\" sign in parameter string with subscript " + i + ", so the specific parameters cannot be determined. Terminate?")) return;//发现无效字符串并弹出终止提示。 Find the invalid string and prompt the termination tips.
+				continue;//用户不打算终止，跳过本次循环。The user does not intend to terminate, skipping this loop.
+			}
+			var start = parameters[i].substring(0,indexOfTilde);//分离start参数。 Separate the start parameter.
+			var indexOfDot = parameters[i].indexOf(".");//获取点号首次出现的位置。 Get the position where the dot first appears.
+			var end = "";//用于存储end参数。 Used to store the end parameter.
+			if(indexOfDot == -1) {//判断是否未指定contentType参数。 Determine whether the contentType parameter is not specified.
+				end = parameters[i].substring(indexOfTilde + 1);//分离end参数。 Separate the end parameter.
+			} else {//指定了contentType参数。 The contentType parameter is specified.
+				end = parameters[i].substring(indexOfTilde + 1,indexOfDot);//分离end参数。 Separate the end parameter.
+				contentType = parameters[i].substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
+			}
+			var sliced = blob.slice((start?parseInt(start):undefined),(end?parseInt(end):undefined),(contentType?contentType:undefined));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
+			var slicedFileName = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
+			downloadFunction(slicedFileName, sliced);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 		}
-		var start = parameters[i].substring(0,indexOfTilde);//分离start参数。 Separate the start parameter.
-		var indexOfDot = parameters[i].indexOf(".");//获取点号首次出现的位置。 Get the position where the dot first appears.
-		var end = "";//用于存储end参数。 Used to store the end parameter.
-		if(indexOfDot == -1) {//判断是否未指定contentType参数。 Determine whether the contentType parameter is not specified.
-			end = parameters[i].substring(indexOfTilde + 1);//分离end参数。 Separate the end parameter.
-		} else {//指定了contentType参数。 The contentType parameter is specified.
-			end = parameters[i].substring(indexOfTilde + 1,indexOfDot);//分离end参数。 Separate the end parameter.
-			contentType = parameters[i].substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
-		}
-		var sliced = blob.slice((start?parseInt(start):undefined),(end?parseInt(end):undefined),(contentType?contentType:undefined));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
-		var slicedFileName = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
-		downloadFunction(slicedFileName, sliced);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 	}
 }
 </script>
