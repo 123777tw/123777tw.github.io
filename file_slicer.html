@@ -141,7 +141,7 @@ function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数�
 		liTag.appendChild(aTag);//将a标签套入li标签。 Insert the "a" tag into the "li" tag.
 		var readSign = document.createElement('button');//创建阅读按钮。 Create read button.
 		readSign.innerHTML = "→DataURL";//设置阅读按钮中的显示内容。 Set the display content in the read button.
-		readSign.setAttribute("onclick","file2Base64('" + aTag.href + "', this.parentNode)");//设置阅读按钮的点击行为。file2Base64函数的实现在下方。 Set the click behavior of the read button. The implementation of the file2Base64 function is below.
+		readSign.setAttribute("onclick","file2Base64('" + aTag.href + "', this)");//设置阅读按钮的点击行为。file2Base64函数的实现在下方。 Set the click behavior of the read button. The implementation of the file2Base64 function is below.
 		liTag.appendChild(readSign);//将按钮标签套入li标签。 Insert the "button" tag into the "li" tag.
 		var deleteSign = document.createElement('button');//创建删除按钮。 Create delete button.
 		deleteSign.innerHTML = "x";//设置删除按钮中的显示内容。 Set the display content in the delete button.
@@ -154,7 +154,7 @@ function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数�
 		URL.revokeObjectURL(aTag.href);//释放已经无用的URL对象。Release the used URL object.
 	}
 }
-function file2Base64(blobURL, liNode) {//文件转Base64（二进制链接串，li节点）
+function file2Base64(blobURL, thisbutton) {//文件转Base64（二进制链接串，li节点）
 	fetch(blobURL).then(function(r){return r.blob();}).then(function(b){//通过二进制链接串取回二进制对象。 Retrieve the blob object through the blobURL string.
 		var fr = new FileReader();//创建一个文件阅读器，用于转换base64数据地址。 Create a FileReader for converting Base64 DataURL.
 		fr.readAsDataURL(b);//异步转换数据地址。 Asynchronously convert DataURL.
@@ -163,9 +163,21 @@ function file2Base64(blobURL, liNode) {//文件转Base64（二进制链接串，
 			board.style.cssText = "display:block;width:100%;word-break:break-all";//设置文本区域的样式。 Style the textarea.
 			board.setAttribute('readonly', '');//设置文本区域内容为只读以防止误操作。 Set the content of the textarea as read-only to prevent misoperation.
 			board.innerText = this.result;//将转换完成的数据地址放入文本区域。 Put the converted DataURL into the textarea.
-			liNode.appendChild(board);//将文本区域套入li标签。 Insert the textarea into the "li" tag.
+			thisbutton.parentNode.appendChild(board);//将文本区域套入父级li标签。 Insert the textarea into the parent "li" tag.
+			thisbutton.setAttribute("onclick", "collapseDataURLBoard(this)");//将按钮点击行为改为折叠文本区域。collapseDataURLBoard函数的实现在下方。 Change the button click behavior to collapse the textarea. The implementation of the collapseDataURLBoard function is below.
+			thisbutton.innerHTML = "↑DataURL↑";//将按钮中显示内容改为折叠功能相关内容。 Change the content displayed in the button to those related to the collapse function.
 		}
 	})
+}
+function collapseDataURLBoard(thisbutton) {//折叠数据地址板（这个按钮）
+	var board = thisbutton.parentNode.lastElementChild;//找出数据地址板的节点以复用。 Find out the node of the DataURL board for reuse.
+	if(board.style.display == 'none') {//检查数据地址板是否已经隐藏。 Check if the DataURL board is hidden.
+		board.style.display = 'block';//设置元素呈现为块级元素（取消隐藏）。 Set it to render as a block level element (unhide).
+		thisbutton.innerHTML = "↑DataURL↑";//将按钮中显示内容改为折叠相关内容。 Change the content displayed in the button to those related to collapse.
+	} else {//数据地址板没有被隐藏。 The DataURL board is not hidden.
+		board.style.display = 'none';//设置元素呈现为不显示（隐藏）。 Set it to render as not displayed (hide).
+		thisbutton.innerHTML = "↓DataURL↓";//将按钮中显示内容改为展开相关内容。 Change the content displayed in the button to those related to unfold.
+	}
 }
 function deleteLiTag(blobURL, liNode) {//删除li标签（二进制链接串，li节点） 创建此函数是因为其中引用了无法在onclick属性中被调用的函数。 This function was created because it references a function that cannot be called in onclick properties.
 	URL.revokeObjectURL(blobURL);//释放指定的URL对象。注意此步骤无法在onclick属性内部直接调用。 Releases the specified URL object. Note that this step cannot be called directly inside the onclick property.
