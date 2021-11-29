@@ -137,17 +137,35 @@ function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数�
 	aTag.href = URL.createObjectURL(fileBlob);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
 	if(document.getElementById("CheckBox2").checked) {//如果勾选了手动下载列表。 If manual download list is checked.
 		aTag.innerHTML = fileName;//将文件名作为a标签的填充内容。 Use the fileName as the padding for the "a" tag.
-		var liTag = document.createElement('li');//使用li标签规划列表。 Use “li” tags to planning the list.
+		var liTag = document.createElement('li');//使用li标签规划列表。 Use "li" tags to planning the list.
 		liTag.appendChild(aTag);//将a标签套入li标签。 Insert the "a" tag into the "li" tag.
+		var readSign = document.createElement('button');//创建阅读按钮。 Create read button.
+		readSign.innerHTML = "→DataURL";//设置阅读按钮中的显示内容。 Set the display content in the read button.
+		readSign.setAttribute("onclick","file2Base64('" + aTag.href + "', this.parentNode)");//设置阅读按钮的点击行为。file2Base64函数的实现在下方。 Set the click behavior of the read button. The implementation of the file2Base64 function is below.
+		liTag.appendChild(readSign);//将按钮标签套入li标签。 Insert the "button" tag into the "li" tag.
 		var deleteSign = document.createElement('button');//创建删除按钮。 Create delete button.
 		deleteSign.innerHTML = "x";//设置删除按钮中的显示内容。 Set the display content in the delete button.
+		deleteSign.style.cssText = "color:red;background-color:pink;border-color:red";//设置删除按钮的颜色使其更加醒目。 Set the color of the delete button to make it more eye-catching.
 		deleteSign.setAttribute("onclick","deleteLiTag('" + aTag.href + "', this.parentNode)");//设置删除按钮的点击行为。deleteLiTag函数的实现在下方。 Set the click behavior of the delete button. The implementation of the deleteLiTag function is below.
-		liTag.appendChild(deleteSign);
+		liTag.appendChild(deleteSign);//将按钮标签套入li标签。 Insert the "button" tag into the "li" tag.
 		document.getElementById("CheckBox2").parentNode.nextElementSibling.appendChild(liTag);//将li标签插入前端的ol标签。 Insert the "li" tag into the front end "ol" tag.
 	} else {//自动并发下载。 Automatic concurrent download.
 		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 		URL.revokeObjectURL(aTag.href);//释放已经无用的URL对象。Release the used URL object.
 	}
+}
+function file2Base64(blobURL, liNode) {//文件转Base64（二进制链接串，li节点）
+	fetch(blobURL).then(function(r){return r.blob();}).then(function(b){//通过二进制链接串取回二进制对象。 Retrieve the blob object through the blobURL string.
+		var fr = new FileReader();//创建一个文件阅读器，用于转换base64数据地址。 Create a FileReader for converting Base64 DataURL.
+		fr.readAsDataURL(b);//异步转换数据地址。 Asynchronously convert DataURL.
+		fr.onload = function() {//转换完成后。 After the conversion is completed.
+			var board = document.createElement('textarea');//创建一个文本区域，用于展示转换出的数据地址。 Create a textarea to display the converted DataURL.
+			board.style.cssText = "display:block;width:100%;word-break:break-all";//设置文本区域的样式。 Style the textarea.
+			board.setAttribute('readonly', '');//设置文本区域内容为只读以防止误操作。 Set the content of the textarea as read-only to prevent misoperation.
+			board.innerText = this.result;//将转换完成的数据地址放入文本区域。 Put the converted DataURL into the textarea.
+			liNode.appendChild(board);//将文本区域套入li标签。 Insert the textarea into the "li" tag.
+		}
+	})
 }
 function deleteLiTag(blobURL, liNode) {//删除li标签（二进制链接串，li节点） 创建此函数是因为其中引用了无法在onclick属性中被调用的函数。 This function was created because it references a function that cannot be called in onclick properties.
 	URL.revokeObjectURL(blobURL);//释放指定的URL对象。注意此步骤无法在onclick属性内部直接调用。 Releases the specified URL object. Note that this step cannot be called directly inside the onclick property.
