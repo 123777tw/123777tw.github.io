@@ -96,31 +96,39 @@ function changeTips(isChecked, textareaNode) {//修改提示(是否勾选，文�
 function advancedSliceAndDownloadFiles(forceFileNames, contents, parameterLists, checked1) {//高级拆分并且下载文件（强制文件名，内容，参数列表，勾选1）
 	for(var cc = 0; cc < contents.length && cc < parameterLists.length; cc ++) {//支持多文件批量分割。 Support multi file batch slicing.
 		//开始：支持多文件批量分割时的最小代码改动。 Start: Minimum code changes of supporting multi file batch slicing.
-		var parameterList = parameterLists[cc];
 		var content = contents[cc];
-		var fileName = forceFileNames[cc] ? forceFileNames[cc] : contents[cc].name;
+		var fileName = forceFileNames[cc] ? forceFileNames[cc] : content.name;
+		var parameterList = parameterLists[cc];
 		//结束。 End.
 		var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被循环引用。Converts the content of the file to a blob object, which will be referenced circularly.
 		var parameters = parameterList.split(",");//将参数字符串拆为数组以遍历。Split the parameter string into an array for traversal.
 		var n = parameters.length;//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
 		var contentType = checked1?"application/octet-stream":undefined;//根据勾选1状态确定slice函数的第三个参数默认值。 Determine the third parameter default value of slice function according to the status of checked1.
-		for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part.
-			var indexOfTilde = parameters[i].indexOf("~");//获取颚化符首次出现的位置。 Get the position where the tilde first appears.
+		for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part
+			var parameter = parameters[i];//缓存当前分割部分的参数字符串以复用。 Cache the parameter string of the current part for reuse.
+			var slicedFileName;//用于存储当前分割部分的文件名。 Used to store the file name of current part.
+			if(parameter.indexOf('/') == 0) {//判断是否指定了文件名。 Determine if the file name is specified.
+				var endOfSlicedFileName = parameter.lastIndexOf('/');//缓存文件名结束位置以复用。 Cache the end location of the file name for reuse.
+				slicedFileName = parameter.substring(1, endOfSlicedFileName);//取出文件名。 Intercept the file name.
+				parameter = parameter.substring(endOfSlicedFileName + 1);//将文件名部分从参数字符串中移除以防止干扰后续逻辑。 Remove the file name part from the parameter string to prevent interference with subsequent logic.
+			} else {
+				slicedFileName = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标。 The file name of split part: original file name + underline + subscript.
+			}
+			var indexOfTilde = parameter.indexOf("~");//获取颚化符首次出现的位置。 Get the position where the tilde first appears.
 			if(indexOfTilde == -1) {//检查参数字符串是否无效。 Check whether the parameter string is invalid.
 				if (confirm("下标为" + i + "的部分参数中没有“~”号，不能确定具体参数，终止执行？\nThere is no \"~\" sign in parameter string with subscript " + i + ", so the specific parameters cannot be determined. Terminate?")) return;//发现无效字符串并弹出终止提示。 Find the invalid string and prompt the termination tips.
 				continue;//用户不打算终止，跳过本次循环。The user does not intend to terminate, skipping this loop.
 			}
-			var start = parameters[i].substring(0,indexOfTilde);//分离start参数。 Separate the start parameter.
-			var indexOfDot = parameters[i].indexOf(".");//获取点号首次出现的位置。 Get the position where the dot first appears.
-			var end = "";//用于存储end参数。 Used to store the end parameter.
+			var start = parameter.substring(0,indexOfTilde);//分离start参数。 Separate the start parameter.
+			var indexOfDot = parameter.indexOf(".");//获取点号首次出现的位置。 Get the position where the dot first appears.
+			var end;//用于存储end参数。 Used to store the end parameter.
 			if(indexOfDot == -1) {//判断是否未指定contentType参数。 Determine whether the contentType parameter is not specified.
-				end = parameters[i].substring(indexOfTilde + 1);//分离end参数。 Separate the end parameter.
+				end = parameter.substring(indexOfTilde + 1);//分离end参数。 Separate the end parameter.
 			} else {//指定了contentType参数。 The contentType parameter is specified.
-				end = parameters[i].substring(indexOfTilde + 1,indexOfDot);//分离end参数。 Separate the end parameter.
-				contentType = parameters[i].substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
+				end = parameter.substring(indexOfTilde + 1,indexOfDot);//分离end参数。 Separate the end parameter.
+				contentType = parameter.substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
 			}
 			var sliced = blob.slice((start?parseInt(start):undefined),(end?parseInt(end):undefined),(contentType?contentType:undefined));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
-			var slicedFileName = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标 The file name of split part: original file name + underline + subscript
 			downloadFunction(slicedFileName, sliced);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 		}
 	}
@@ -136,7 +144,7 @@ function downloadFunction(fileName, fileBlob) {//下载功能放入独立函数�
 	aTag.download = fileName;//指定下载文件名。Specify the download file name.
 	aTag.href = URL.createObjectURL(fileBlob);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
 	if(document.getElementById("CheckBox2").checked) {//如果勾选了手动下载列表。 If manual download list is checked.
-		aTag.innerHTML = fileName;//将文件名作为a标签的填充内容。 Use the fileName as the padding for the "a" tag.
+		aTag.innerHTML = '&#x1F4C3;' + fileName;//将文件名前添加文件符号作为a标签的填充内容。 Add the file symbol before the file name as the padding for the "a" tag.
 		var liTag = document.createElement('li');//使用li标签规划列表。 Use "li" tags to planning the list.
 		liTag.appendChild(aTag);//将a标签套入li标签。 Insert the "a" tag into the "li" tag.
 		var readSign = document.createElement('button');//创建阅读按钮。 Create read button.
