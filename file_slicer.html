@@ -65,17 +65,19 @@ function mergeAndDownloadFile(fileName, contents) {//合并并且下载文件（
 }
 function generateParameterList(contents, output, checked1) {//生成参数列表（多个内容，输出，勾选1）
 	if(!contents.length) {return;}//如果未选择任何文件立刻返回。If no file is selected, return immediately.
-	var parameterList = "";//用于存储预处理字符串。 Used to store preprocessed strings.
+	var filenames = "";//用于存储文件名列表预处理字符串。 Used to store preprocessed strings of the filename list.
+	var parameterList = "";//用于存储参数列表预处理字符串。 Used to store preprocessed strings of the parameter list.
 	var offset = 0;//用于存储每部分的偏移字节数。 Used to store the number of offset bytes per part.
 	for(i = 0; i < contents.length; i ++) {//每次循环处理一个部分的分割参数。 Each cycle processes one part of the parameters.
-		parameterList += ",/" + contents[i].name + "/" + offset;//追加逗号、文件名和起始字节。 Appending comma, file name and start.
+		filenames += "/" + contents[i].name;//追加斜线和文件名。 Append slash and file name.
+		parameterList += "," + offset;//追加逗号和起始字节。 Append comma and start.
 		offset += contents[i].size;//根据文件大小计算结束字节。 Calculate end according to the file size.
 		parameterList += "~" + offset;//追加颚化符和结束字节。 Append tilde and end.
 		if(!checked1) {//判断勾选1状态。 Judge the status of checked1.
 			parameterList += "." + contents[i].type;//追加点号和文档类型。 Append dot and contentType.
 		}
 	}
-	output.value = parameterList.substring(1);//去除最开始多余的逗号并输出到文本区域。 Remove the first redundant comma and output to the textarea.
+	output.value = filenames + "\n" + parameterList.substring(1);//输出到文本区域。其中参数列表要去除最开始多余的逗号。 Output to the textarea. Notice that the redundant comma at the beginning of the parameter list is removed.
 }
 </script>
 <hr /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
@@ -100,20 +102,19 @@ function advancedSliceAndDownloadFiles(forceFileNames, contents, parameterLists,
 		var fileName = forceFileNames[cc] ? forceFileNames[cc] : content.name;
 		var parameterList = parameterLists[cc];
 		//结束。 End.
+		var slicedFileName = [];//用于存储当前分割部分的文件名。 Used to store the file name of current part.
+		if(parameterList.indexOf('/') == 0) {//判断是否在指定文件名。 Determine if it is specifying the file names.
+			slicedFileName = parameterList.substring(1).split('/');//取出文件名。 Intercept the file name.
+			parameterLists.splice(cc, 1);//移除文件名列表。 Remove the file name list.
+			parameterList = parameterLists[cc];//取出真正的参数列表。 Take out the real parameter list.
+			debugger;
+		}
 		var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被循环引用。Converts the content of the file to a blob object, which will be referenced circularly.
 		var parameters = parameterList.split(",");//将参数字符串拆为数组以遍历。Split the parameter string into an array for traversal.
 		var n = parameters.length;//确定文件会被分割成几个部分，且会被循环引用。Make sure how many parts the file will be divided into. The number will be referenced circularly.
 		var contentType = checked1?"application/octet-stream":undefined;//根据勾选1状态确定slice函数的第三个参数默认值。 Determine the third parameter default value of slice function according to the status of checked1.
 		for(i = 0; i < n; i ++) {//每次循环将会确定出一个分割部分。Each cycle will determine a part
 			var parameter = parameters[i];//缓存当前分割部分的参数字符串以复用。 Cache the parameter string of the current part for reuse.
-			var slicedFileName;//用于存储当前分割部分的文件名。 Used to store the file name of current part.
-			if(parameter.indexOf('/') == 0) {//判断是否指定了文件名。 Determine if the file name is specified.
-				var endOfSlicedFileName = parameter.substring(0, parameter.lastIndexOf('~')).lastIndexOf('/');//缓存文件名结束位置以复用。 Cache the end location of the file name for reuse.
-				slicedFileName = parameter.substring(1, endOfSlicedFileName);//取出文件名。 Intercept the file name.
-				parameter = parameter.substring(endOfSlicedFileName + 1);//将文件名部分从参数字符串中移除以防止干扰后续逻辑。 Remove the file name part from the parameter string to prevent interference with subsequent logic.
-			} else {
-				slicedFileName = fileName + '_' + i;//分割部分的文件名：原始文件名+下划线+下标。 The file name of split part: original file name + underline + subscript.
-			}
 			var indexOfTilde = parameter.indexOf("~");//获取颚化符首次出现的位置。 Get the position where the tilde first appears.
 			if(indexOfTilde == -1) {//检查参数字符串是否无效。 Check whether the parameter string is invalid.
 				if (confirm("下标为" + i + "的部分参数中没有“~”号，不能确定具体参数，终止执行？\nThere is no \"~\" sign in parameter string with subscript " + i + ", so the specific parameters cannot be determined. Terminate?")) return;//发现无效字符串并弹出终止提示。 Find the invalid string and prompt the termination tips.
@@ -129,7 +130,7 @@ function advancedSliceAndDownloadFiles(forceFileNames, contents, parameterLists,
 				contentType = parameter.substring(indexOfDot + 1);//替换默认contentType参数。 Replace the default contentType parameter.
 			}
 			var sliced = blob.slice((start?parseInt(start):undefined),(end?parseInt(end):undefined),(contentType?contentType:undefined));//根据各参数取出分割部分。其中参数为空字符串或各种错误数据将被纠正为undefined。 The segmentation part is taken out according to the parameters. Where the parameters are an empty string or various error data will be corrected to undefined.
-			downloadFunction(slicedFileName, sliced);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
+			downloadFunction(slicedFileName[i] ? slicedFileName[i] : fileName + '_' + i, sliced);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 		}
 	}
 }
