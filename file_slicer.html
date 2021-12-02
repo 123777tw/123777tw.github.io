@@ -68,14 +68,14 @@ function generateParameterList(contents, output, checked1) {//生成参数列表
 	var parameterList = "";//用于存储预处理字符串。 Used to store preprocessed strings.
 	var offset = 0;//用于存储每部分的偏移字节数。 Used to store the number of offset bytes per part.
 	for(i = 0; i < contents.length; i ++) {//每次循环处理一个部分的分割参数。 Each cycle processes one part of the parameters.
-		parameterList += "," + offset;//追加逗号和起始字节。 Appending comma and start.
+		parameterList += ",/" + contents[i].name + "/" + offset;//追加逗号、文件名和起始字节。 Appending comma, file name and start.
 		offset += contents[i].size;//根据文件大小计算结束字节。 Calculate end according to the file size.
 		parameterList += "~" + offset;//追加颚化符和结束字节。 Append tilde and end.
 		if(!checked1) {//判断勾选1状态。 Judge the status of checked1.
 			parameterList += "." + contents[i].type;//追加点号和文档类型。 Append dot and contentType.
 		}
 	}
-	output.value = parameterList.substring(1, parameterList.length);//去除最开始多余的逗号并输出到文本区域。 Remove the first redundant comma and output to the textarea.
+	output.value = parameterList.substring(1);//去除最开始多余的逗号并输出到文本区域。 Remove the first redundant comma and output to the textarea.
 }
 </script>
 <hr /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
@@ -108,7 +108,7 @@ function advancedSliceAndDownloadFiles(forceFileNames, contents, parameterLists,
 			var parameter = parameters[i];//缓存当前分割部分的参数字符串以复用。 Cache the parameter string of the current part for reuse.
 			var slicedFileName;//用于存储当前分割部分的文件名。 Used to store the file name of current part.
 			if(parameter.indexOf('/') == 0) {//判断是否指定了文件名。 Determine if the file name is specified.
-				var endOfSlicedFileName = parameter.lastIndexOf('/');//缓存文件名结束位置以复用。 Cache the end location of the file name for reuse.
+				var endOfSlicedFileName = parameter.substring(0, parameter.lastIndexOf('~')).lastIndexOf('/');//缓存文件名结束位置以复用。 Cache the end location of the file name for reuse.
 				slicedFileName = parameter.substring(1, endOfSlicedFileName);//取出文件名。 Intercept the file name.
 				parameter = parameter.substring(endOfSlicedFileName + 1);//将文件名部分从参数字符串中移除以防止干扰后续逻辑。 Remove the file name part from the parameter string to prevent interference with subsequent logic.
 			} else {
