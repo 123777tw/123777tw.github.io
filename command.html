@@ -1,0 +1,43 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><!--声明此文件的编码格式是UTF-8，用于提高与其他环境的兼容性。 Declare that the encoding format of this file is UTF-8, which is used to improve the compatibility with other environments.-->
+<meta name="viewport" content="width=device-width,initial-scale=1.0"><!--声明视口宽度与可视区域宽度一致，用于改善移动设备上的使用体验。 Declare that the viewport width is consistent with the visual area width, which is used to improve the use experience on mobile devices.-->
+<title>命令 Command</title>
+<!--这是一个允许用户自由提交命令脚本的工具，但具体行为取决于实际使用时浏览器带有的脚本引擎。 This is a tool that allows users to submit command scripts freely, but the specific behavior depends on the script engine with the browser when actually using it.-->
+<script>
+function read(file, textarea){//读取（文件，文本区域）
+	var fr = new FileReader();//创建一个文件阅读器，用于读取脚本文件。 Create a FileReader to read a script file.
+	fr.readAsText(file);//异步读取。 Asynchronous read.
+	fr.onload = function(){//转换完成后。 After the conversion is completed.
+		textarea.value = this.result;//将读取内容填入文本区域。 Fill the textarea with the read content.
+	}
+}
+function save(textarea){
+	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
+	aTag.href = URL.createObjectURL(new Blob([textarea.value],{type:"application/octet-stream"}));//以文本区域内容生成二进制对象进而生成对象链接并绑定到<a>节点上。 A binary object is generated from the content of the text area, and then the object link is generated and bound to the <a> node.
+	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
+	URL.revokeObjectURL(aTag.href);//释放已经无用的URL对象。Release the used URL object.
+}
+function execute(input, output){//执行（输入框，输出框）
+	output.style.color = "black";//将输出框文字颜色恢复为黑色。 Restore the output box text color to black.
+	try{//尝试
+		output.value=eval(input.value);//执行用户提交的脚本，并将返回值填入输出框。 Execute the script submitted by the user and fill the return value in the output box.
+	} catch(e){//捕捉（异常）
+		output.style.color = "red";//将输出框文字颜色设置为红色以警示这是一条错误信息。 Set the output box text color to red to warn that this is an error message.
+		output.value = e;//将错误信息填入输出框。 Fill the error message in the output box.
+	}
+}
+</script>
+</head>
+<body>
+<div><!--工具栏。 Toolbar.-->
+<input type="file" onchange="read(this.files[0],document.getElementById('input'))" /><!--用于引用脚本文件。 Used to reference a script file.-->
+<button onclick="save(document.getElementById('input'))">&#x1F4BE;</button><!--保存按钮。 Save button.-->
+<button onclick="document.getElementById('input').value = ''">X</button><!--清除按钮。 Clear button.-->
+<button onclick="document.getElementById('input').value += document.getElementById('output').value">&#x2191;</button><!--填充结果按钮。 Fill results button.-->
+<button onclick="execute(document.getElementById('input'),document.getElementById('output'))">&#x25B6;</button><!--执行按钮。 Execute button.-->
+</div>
+<textarea id="input" style="display:block;width:100%;color:navy" placeholder=">"></textarea><!--输入框。 Input box.-->
+<textarea id="output" readonly style="display:block;width:100%" placeholder="<"></textarea><!--输出框。 Output box.-->
+</body>
+</html>
