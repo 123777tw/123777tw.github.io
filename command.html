@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"><!--声明视口宽度与可视区域宽度一致，用于改善移动设备上的使用体验。 Declare that the viewport width is consistent with the visual area width, which is used to improve the use experience on mobile devices.-->
 <title>命令 Command</title>
 <!--这是一个允许用户自由提交命令脚本的工具，但具体行为取决于实际使用时浏览器带有的脚本引擎。 This is a tool that allows users to submit command scripts freely, but the specific behavior depends on the script engine with the browser when actually using it.-->
-<script>
+<script><!--全局/主界面功能。 Global / main interface functions.-->
 function read(file, textarea){//读取（文件，文本区域）
 	var fr = new FileReader();//创建一个文件阅读器，用于读取脚本文件。 Create a FileReader to read a script file.
 	fr.readAsText(file);//异步读取。 Asynchronous read.
@@ -12,11 +12,21 @@ function read(file, textarea){//读取（文件，文本区域）
 		textarea.value = this.result;//将读取内容填入文本区域。 Fill the textarea with the read content.
 	}
 }
-function save(textarea){
+function save(textarea){//保存（文本区域）
 	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
 	aTag.href = URL.createObjectURL(new Blob([textarea.value],{type:"application/octet-stream"}));//以文本区域内容生成二进制对象进而生成对象链接并绑定到<a>节点上。 A binary object is generated from the content of the text area, and then the object link is generated and bound to the <a> node.
 	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 	URL.revokeObjectURL(aTag.href);//释放已经无用的URL对象。Release the used URL object.
+}
+function keyboard(div,button,height){//键盘（分区，按钮，高度）
+	if(div.style.display == "none"){//如果键盘分区不显示。 If the keyboard division is not displayed.
+		div.style.display = "block";//设置为显示（块级）。 Set to display (block level).
+		div.style.height = height;//设置高度。 Set the height.
+		button.style.cssText = "color:white;background-color:black";//按钮颜色设置为已按下。 The button color is set to pressed.
+	}else{//键盘分区显示。 The keyboard division is displayed.
+		div.style.display = "none";//设置为不显示。 Set to not display.
+		button.style.cssText = "color:black;background-color:white";//按钮颜色设置为未按下。 The button color is set to not pressed.
+	}
 }
 function execute(input, output){//执行（输入框，输出框）
 	output.style.color = "black";//将输出框文字颜色恢复为黑色。 Restore the output box text color to black.
@@ -29,15 +39,62 @@ function execute(input, output){//执行（输入框，输出框）
 }
 </script>
 </head>
-<body>
-<div><!--工具栏。 Toolbar.-->
-<input type="file" onchange="read(this.files[0],document.getElementById('input'))" /><!--用于引用脚本文件。 Used to reference a script file.-->
-<button onclick="save(document.getElementById('input'))">&#x1F4BE;</button><!--保存按钮。 Save button.-->
-<button onclick="document.getElementById('input').value = ''">X</button><!--清除按钮。 Clear button.-->
-<button onclick="document.getElementById('input').value += document.getElementById('output').value">&#x2191;</button><!--填充结果按钮。 Fill results button.-->
-<button onclick="execute(document.getElementById('input'),document.getElementById('output'))">&#x25B6;</button><!--执行按钮。 Execute button.-->
+<body style="margin:8px">
+<div id="main"><!--主界面。 main interface.-->
+<div id="toolbar"><!--工具栏。 Toolbar.-->
+<input id="toolbar_read" type="file" onchange="read(this.files[0],document.getElementById('input'))" /><!--用于引用脚本文件。 Used to reference a script file.-->
+<button id="toolbar_save" onclick="save(document.getElementById('input'))">&#x1F4BE;</button><!--保存按钮。 Save button.-->
+<button id="toolbar_clear" onclick="document.getElementById('input').value = ''">X</button><!--清除按钮。 Clear button.-->
+<button id="toolbar_fill" onclick="document.getElementById('input').value += document.getElementById('output').value">&#x2191;</button><!--填充结果按钮。 Fill results button.-->
+<button id="toolbar_keyboard" onclick="keyboard(document.getElementById('keyboard'),this,'calc(100vh - '+(this,document.getElementById('main').offsetHeight+16)+'px')" style="color:black;background-color:white">&#x2328;</button><!--显示/隐藏键盘按钮。 Show / hide keyboard button.-->
+<button id="toolbar_execute" onclick="execute(document.getElementById('input'),document.getElementById('output'))">&#x25B6;</button><!--执行按钮。 Execute button.-->
 </div>
 <textarea id="input" style="display:block;width:100%;color:navy" placeholder=">"></textarea><!--输入框。 Input box.-->
 <textarea id="output" readonly style="display:block;width:100%" placeholder="<"></textarea><!--输出框。 Output box.-->
+</div>
+<div id="keyboard" style="display:none"><!--虚拟键盘。 Virtual keyboard.-->
+<style><!--全局按键样式。 Global key style.-->
+td{padding:0;cursor:pointer;user-select:none}
+td:hover{background-color:#DDD}
+td:active{background-color:#333;color:white}
+</style>
+<table border=1 id="keyboard_layout" style="text-align:center;width:100%;height:100%;table-layout:fixed;display:table"><!--键盘布局。 Keyboard layout.-->
+<!--作为常识，计算器的按键功能不做详注。 As common sense, the key functions of the calculator are not commented in detail.-->
+<tr><td onclick="M = Number(outputBox.value);M=M?M:0;indicator_MR.style.borderColor=M?'red':'black'">MS</td><td onclick="M = 0;indicator_MR.style.borderColor='black'">MC</td><td id="MR" onclick="type('M')">MR</td><td onclick="M += Number(outputBox.value)?Number(outputBox.value):0;indicator_MR.style.borderColor=M?'red':'black'">M+</td><td onclick="M -= Number(outputBox.value)?Number(outputBox.value):0;indicator_MR.style.borderColor=M?'red':'black'">M-</td></tr>
+<tr><td onclick="inputBox.value = inputBox.value.slice(0,-1);retype = false;outputBox.style.backgroundColor = 'silver';indicator_EQUAL.style.borderColor = 'red';">←</td><td onclick="inputBox.value = ''">AC</td><td onclick="subLayout.style.display='table';mainLayout.style.display='none'">Math.?</td><td onclick="type('(')">(</td><td onclick="type(')')">)</td></tr>
+<tr><td onclick="type('7')">7</td><td onclick="type('8')">8</td><td onclick="type('9')">9</td><td onclick="type('/')">/</td><td onclick="type('%')">%</td></tr>
+<tr><td onclick="type('4')">4</td><td onclick="type('5')">5</td><td onclick="type('6')">6</td><td onclick="type('*')">*</td><td onclick="type('**')">**</td></tr>
+<tr><td onclick="type('1')">1</td><td onclick="type('2')">2</td><td onclick="type('3')">3</td><td onclick="type('-')">-</td><td onclick="inputBox.value += outputBox.value">↑</td></tr>
+<tr><td onclick="type('0')">0</td><td onclick="type('00')">00</td><td onclick="type('.')">.</td><td onclick="type('+')">+</td><td id="EQUAL" onclick="execute(inputBox,outputBox);retype=true;outputBox.style.backgroundColor='white';this.style.borderColor='black'">=</td></tr>
+</table>
+<table border=1 id="keyboard_layout2" style="text-align:center;width:100%;height:100%;table-layout:fixed;display:none"><!--子键盘布局。 Sub-keyboard layout.-->
+<!--“Math.?”按钮功能列表引用自Math类的成员列表并依样输入，实际效果依赖浏览器兼容性。 The button "Math.?" function list is referenced from the member list of the Math class and entered accordingly. The actual effect depends on the browser compatibility.-->
+<tr><td onclick="type('Math.abs(');mainLayout.style.display='table';subLayout.style.display='none'">abs(</td><td onclick="type('Math.acos(');mainLayout.style.display='table';subLayout.style.display='none'">acos(</td><td onclick="type('Math.acosh(');mainLayout.style.display='table';subLayout.style.display='none'">acosh(</td><td  onclick="type('Math.asin(');mainLayout.style.display='table';subLayout.style.display='none'">asin(</td><td onclick="type('Math.asinh(');mainLayout.style.display='table';subLayout.style.display='none'">asinh(</td></tr>
+<tr><td onclick="type('Math.atan(');mainLayout.style.display='table';subLayout.style.display='none'">atan(</td><td onclick="type('Math.atanh(');mainLayout.style.display='table';subLayout.style.display='none'">atanh(</td><td style="border-color:red" onclick="mainLayout.style.display='table';subLayout.style.display='none'">Math.?</td><td onclick="type('Math.cbrt(');mainLayout.style.display='table';subLayout.style.display='none'">cbrt(</td><td onclick="type('Math.ceil(');mainLayout.style.display='table';subLayout.style.display='none'">ceil(</td></tr>
+<tr><td onclick="type('Math.clz32(');mainLayout.style.display='table';subLayout.style.display='none'">clz32(</td><td onclick="type('Math.cos(');mainLayout.style.display='table';subLayout.style.display='none'">cos(</td><td onclick="type('Math.cosh(');mainLayout.style.display='table';subLayout.style.display='none'">cosh(</td><td onclick="type('Math.exp(');mainLayout.style.display='table';subLayout.style.display='none'">exp(</td><td onclick="type('Math.expm1(');mainLayout.style.display='table';subLayout.style.display='none'">expm1(</td></tr>
+<tr><td onclick="type('Math.floor(');mainLayout.style.display='table';subLayout.style.display='none'">floor(</td><td onclick="type('Math.fround(');mainLayout.style.display='table';subLayout.style.display='none'">fround(</td><td onclick="type('Math.log(');mainLayout.style.display='table';subLayout.style.display='none'">log(</td><td onclick="type('Math.log10(');mainLayout.style.display='table';subLayout.style.display='none'">log10(</td><td onclick="type('Math.log1p(');mainLayout.style.display='table';subLayout.style.display='none'">log1p(</td></tr>
+<tr><td onclick="type('Math.log2(');mainLayout.style.display='table';subLayout.style.display='none'">log2(</td><td onclick="type('Math.round(');mainLayout.style.display='table';subLayout.style.display='none'">round(</td><td onclick="type('Math.sign(');mainLayout.style.display='table';subLayout.style.display='none'">sign(</td><td onclick="type('Math.sin(');mainLayout.style.display='table';subLayout.style.display='none'">sin(</td><td onclick="type('Math.sinh(');mainLayout.style.display='table';subLayout.style.display='none'">sinh(</td></tr>
+<tr><td onclick="type('Math.sqrt(');mainLayout.style.display='table';subLayout.style.display='none'">sqrt(</td><td onclick="type('Math.tan(');mainLayout.style.display='table';subLayout.style.display='none'">tan(</td><td onclick="type('Math.tanh(');mainLayout.style.display='table';subLayout.style.display='none'">tanh(</td><td onclick="type('Math.trunc(');mainLayout.style.display='table';subLayout.style.display='none'">trunc(</td><td onclick="type('Math.random()');mainLayout.style.display='table';subLayout.style.display='none'">random()</td></tr>
+</table>
+<script><!--按键功能。 Key functions.-->
+var inputBox = document.getElementById("input");//取出输入框以复用。 Fetch the input box to reuse.
+var outputBox = document.getElementById("output");//取出输出框以复用。 Fetch the output box to reuse.
+var mainLayout = document.getElementById("keyboard_layout");//取出主布局以复用。 Fetch the main layout to reuse.
+var subLayout = document.getElementById("keyboard_layout2");//取出子布局以复用。 Fetch the sub layout to reuse.
+var indicator_MR = document.getElementById("MR");//取出MR按键以复用。 Fetch the MR button to reuse.
+var indicator_EQUAL = document.getElementById("EQUAL");//取出等号按键以复用。 Fetch the EQUAL button to reuse.
+var retype = true;//计算器风格的自动重新键入标志。 Calculator style automatic retype flag.
+var M = 0;//定义计算器内存。 Define calculator memory.
+function type(character){//打字（字符）
+	if(retype == true){//如果需要重新键入。 If retyping is needed.
+		inputBox.value = '';//清除输入框。 Clear the input box.
+		retype = false;//重置重新键入标志。 Reset retype flag.
+	}
+	inputBox.value += character;//打字。 Typing.
+	outputBox.style.backgroundColor = "silver";//低亮输出框。 Lowlight the output box.
+	indicator_EQUAL.style.borderColor = "red";//高亮等号按键。 Highlight the EQUAL button.
+}
+</script>
+</div>
 </body>
 </html>
