@@ -39,7 +39,7 @@ function execute(input, output){//执行（输入框，输出框）
 }
 </script>
 </head>
-<body style="margin:8px">
+<body style="margin:8px" onload="try{eval(decodeURIComponent(window.location.search.substring(1)))}catch(e){document.getElementById('output').value = e;document.getElementById('input').value = decodeURIComponent(window.location.search.substring(1));document.getElementById('output').style.color = 'red'}"><!--可通过链接搜索串预执行脚本。 Scripts can be pre executed via the search string.-->
 <div id="main"><!--主界面。 main interface.-->
 <div id="toolbar"><!--工具栏。 Toolbar.-->
 <input id="toolbar_read" type="file" onchange="read(this.files[0],document.getElementById('input'))" /><!--用于引用脚本文件。 Used to reference a script file.-->
