@@ -41,7 +41,6 @@ function bodyLoaded(){//所有代码均在静态DOM渲染完毕以后执行。 A
 	}
 	function others(event){//其他操作。 Other operations.
 		event.preventDefault();//取消默认菜单显示。 Cancel the default menu display.
-		s.removeChild(s.lastElementChild);//撤销当前笔划。 Undo the current stroke.
 		var blob = new Blob([c.innerHTML], {type: "application/octet-stream"});//将图片本体封装为二进制文件以便下载。 Encapsulate the picture ontology into a binary file for download.
 		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
 		aTag.href = URL.createObjectURL(blob);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
