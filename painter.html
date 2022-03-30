@@ -9,44 +9,65 @@ function bodyLoaded(){//所有代码均在静态DOM渲染完毕以后执行。 A
 	var c = document.getElementById("Canvas");//找出画布以复用。 Find the canvas for reuse.
 	var s = c.firstElementChild;//找出图片本体以复用。 Find out the picture ontology for reuse.
 	var d = undefined;//用于缓存每个笔划。 Used to cache each stroke.
-	function onMouseDown(event){//落笔。 Drop the brush.
+	function drop(event){//落笔。 Drop the brush.
 		d = document.createElementNS("http://www.w3.org/2000/svg","polyline");//准备绘制一条折线。 Prepare to draw a polyline.
 		d.setAttribute("points",event.offsetX+","+event.offsetY);//根据鼠标位置设置起点坐标。 Set the starting point coordinate according to the mouse position.
 		s.appendChild(d);//绘入。 Draw in.
 	}
-	function onMouseFirstDown(event){//首次落笔。 Drop the brush for the first time.
+	function firstDrop(event){//首次落笔。 Drop the brush for the first time.
 		c.style.width = c.offsetWidth;//固定画布宽度。 Fix the canvas width.
 		c.style.height = c.offsetHeight;//固定画布高度。 Fix the canvas height.
 		s.setAttribute("width",c.offsetWidth);//固定图片宽度。 Fix the picture width.
 		s.setAttribute("height",c.offsetHeight);//固定图片高度。 Fix the picture height.
 		c.parentNode.style.backgroundColor = "grey";//将页面主体背景设置为灰色。 Set the page body background to gray.
-		onMouseDown(event);//执行落笔步骤。 Perform the steps of dropping the brush.
-		c.onmousedown = onMouseDown;//重新绑定鼠标按下事件。 Rebind the onmousedown event.
+		drop(event);//执行落笔步骤。 Perform the steps of dropping the brush.
+		c.onmousedown = drop;//重新绑定鼠标按下事件。 Rebind the onmousedown event.
 	}
-	function onMouseUp(event){//抬笔。 Lift the brush.
+	function lift(event){//抬笔。 Lift the brush.
 		if(d != undefined){//盘错：确认已经落笔。 Eliminate accidents: Confirm the brush dropped.
 			d.setAttribute("points",d.getAttribute("points")+" "+event.offsetX+","+event.offsetY); //根据鼠标位置追加终点坐标。 Add the stop coordinate according to the mouse position.
-			d = undefined;
+			var p = d.getAttribute("points").split(' ');//获取当前笔划经过的所有坐标。 Gets all coordinates that the current stroke passes through.
+			d = undefined;//当前笔划完成。 The current stroke is complete.
+			for(var i = p.length-1; i > 0; i--){//遍历坐标。 Traverse the coordinates.
+				if(p[i] != p[i-1]) return;//当发现任何不同的坐标时不做任何额外处理。 No more processing when any different coordinates are found.
+			}
+			s.removeChild(s.lastElementChild);//撤销当前笔划，因为它没有任何大小。 Undo the current stroke because it does not have any size.
 		}
 	}
-	function onMouseMove(event){//挥笔。Wield the brush.
+	function wield(event){//挥笔。Wield the brush.
 		if(d != undefined){//盘错：确认已经落笔。 Eliminate accidents: Confirm the brush dropped.
 			d.setAttribute("points",d.getAttribute("points")+" "+event.offsetX+","+event.offsetY); //根据鼠标位置追加延续坐标。 Add the continuation coordinate according to the mouse position.
 		}
 	}
-	function onContextMenu(event){//其他操作。 Other operations.
-		event.preventDefault();//取消默认菜单显示。 Cancels the default menu display.
-		s.removeChild(s.lastElementChild);//撤销落笔步骤。 Cancel the steps of dropping the brush.
+	function others(event){//其他操作。 Other operations.
+		event.preventDefault();//取消默认菜单显示。 Cancel the default menu display.
+		s.removeChild(s.lastElementChild);//撤销当前笔划。 Undo the current stroke.
 		var blob = new Blob([c.innerHTML], {type: "application/octet-stream"});//将图片本体封装为二进制文件以便下载。 Encapsulate the picture ontology into a binary file for download.
 		var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
 		aTag.href = URL.createObjectURL(blob);//将<a>节点的链接绑定到已经取出的分割部分。Bind the link of the <a> node to the splitted part that has been taken out.
 		aTag.download = "Painter.svg";//指定下载文件名。Specify the download file name.
 		aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 	}
-	c.onmousedown = onMouseFirstDown;//绑定首次鼠标按下事件。 Bind the first onmousedown event.
-	c.onmouseup = onMouseUp;//绑定鼠标抬起事件。 Bind the onmouseup event.
-	c.onmousemove = onMouseMove;//绑定鼠标移动事件。 Bind the onmousemove event.
-	c.oncontextmenu = onContextMenu;//绑定快捷菜单事件。 Bind the oncontextmenu event.
+	c.onmousedown = firstDrop;//绑定首次鼠标按下事件。 Bind the first onmousedown event.
+	c.onmouseup = lift;//绑定鼠标抬起事件。 Bind the onmouseup event.
+	c.onmousemove = wield;//绑定鼠标移动事件。 Bind the onmousemove event.
+	c.oncontextmenu = others;//绑定快捷菜单事件。 Bind the oncontextmenu event.
+	//【临时】向移动端（单点触控）兼容：开始。 [TEMPORARY]Compatible with mobile terminal (single touch): start.
+	function onTouchStart(event){
+		c.onmousedown({offsetX:event.touches[0].pageX-8,offsetY:event.touches[0].pageY-8});
+	}
+	function onTouchMove(event){
+		event.preventDefault();
+		c.onmousemove({offsetX:event.touches[0].pageX-8,offsetY:event.touches[0].pageY-8});
+	}
+	function onTouchEnd(event){
+		event.preventDefault();
+		c.onmouseup({offsetX:event.changedTouches[0].pageX-8,offsetY:event.changedTouches[0].pageY-8});
+	}
+	c.ontouchstart = onTouchStart;
+	c.ontouchmove = onTouchMove;
+	c.ontouchend = onTouchEnd;
+	//【临时】向移动端（单点触控）兼容：结束。 [TEMPORARY]Compatible with mobile terminal (single touch): end.
 }
 </script>
 </head>
