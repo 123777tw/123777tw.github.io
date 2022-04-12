@@ -19,8 +19,8 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 		s.appendChild(d);//绘入。 Draw in.
 	}
 	function firstDrop(event){//首次落笔。 Drop the brush for the first time.
-		c.style.width = c.offsetWidth;//固定画布宽度。 Fix the canvas width.
-		c.style.height = c.offsetHeight;//固定画布高度。 Fix the canvas height.
+		c.style.width = Math.floor(getComputedStyle(c).width);//固定画布宽度。 Fix the canvas width.
+		c.style.height = Math.floor(getComputedStyle(c).height);//固定画布高度。 Fix the canvas height.
 		s.setAttribute("width",c.offsetWidth);//固定图片宽度。 Fix the picture width.
 		s.setAttribute("height",c.offsetHeight);//固定图片高度。 Fix the picture height.
 		c.parentNode.style.backgroundColor = "grey";//将页面主体背景设置为灰色。 Set the page body background to gray.
@@ -81,11 +81,11 @@ function download(){//下载
 </script>
 </head>
 <body style="margin:8px;background-color:blue" onload="bodyLoaded()"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel margin display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
-<div id="Canvas" style="width:100%;height:100%;background-color:white"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><style>polyline{fill:none;stroke:black}</style></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
-<div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449;justify-content:center;align-items:center"><!--菜单与阴影。 The menu with its shadow.-->
+<div id="Canvas" style="width:100%;height:100%;background-color:white;cursor:crosshair"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><style>polyline{fill:none;stroke:black}</style></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
+<div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449;justify-content:center;align-items:center" onclick="this.style.display = 'none'"><!--菜单与阴影。 The menu with its shadow.-->
 <table style="color:white;background-color:black;text-align:center"><!--菜单各项。 The menu items.-->
 <tr><td>
-<svg height="20px" width="19px" onclick="download()">
+<svg height="20px" width="20px" style="border:1px solid white" onclick="download()">
 <line x1="10" y1="0" x2="10" y2="10" style="stroke:white;stroke-width:3" />
 <polygon points="5,10 10,15 15,10" style="fill:white" />
 <rect x="1" y="16" width="17" height="3" style="stroke:white;stroke-width:2" />
