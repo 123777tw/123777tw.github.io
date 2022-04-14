@@ -7,15 +7,19 @@
 <script>
 var c;//用于存储画布节点以复用。 Used to store the canvas node for reuse.
 var s;//用于存储图片本体节点以复用。 Used to store the picture ontology node for reuse.
-var m;//用于存储菜单遮罩节点以复用。 Used to store the menu mask node for reuse.
+var sh;//用于存储遮罩节点以复用。 Used to store the shield node for reuse.
+var m;//用于存储菜单节点以复用。 Used to store the menu node for reuse.
+var d = undefined;//用于缓存每个笔划。 Used to cache each stroke.
+var ds = {};//用于存储笔画的额外的样式设置。 Used to store additional style settings of the stroke.
 function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完毕以后执行。 All event response related codes is executed after static DOM rendering.
 	c = document.getElementById("Canvas");//找出画布节点。 Find the canvas node.
 	s = c.firstElementChild;//找出图片本体节点。 Find out the picture ontology node.
-	m = document.getElementById("Menu");//找出菜单遮罩节点。 Find out the menu mask node.
-	var d = undefined;//用于缓存每个笔划。 Used to cache each stroke.
+	sh = document.getElementById("Shield");//找出遮罩节点。 Find the shield node.
+	m = document.getElementById("Menu");//找出菜单节点。 Find out the menu node.
 	function drop(event){//落笔。 Drop the brush.
 		d = document.createElementNS("http://www.w3.org/2000/svg","polyline");//准备绘制一条折线。 Prepare to draw a polyline.
 		d.setAttribute("points",event.offsetX+","+event.offsetY);//根据鼠标位置设置起点坐标。 Set the starting point coordinate according to the mouse position.
+		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
 		s.appendChild(d);//绘入。 Draw in.
 	}
 	function firstDrop(event){//首次落笔。 Drop the brush for the first time.
@@ -45,7 +49,8 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	}
 	function others(event){//其他操作。 Other operations.
 		event.preventDefault();//取消默认菜单显示。 Cancel the default menu display.
-		m.style.display = "flex";//显示自定义菜单。 Show the custom menu.
+		event.stopPropagation();//阻止事件冒泡。 Prevent the event bubbling.
+		sh.style.display = m.style.display = "flex";//显示菜单和遮罩。 Show the menu and the shield.
 	}
 	c.onmousedown = firstDrop;//绑定首次鼠标按下事件。 Bind the first onmousedown event.
 	c.onmouseup = lift;//绑定鼠标抬起事件。 Bind the onmouseup event.
@@ -67,8 +72,34 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	c.ontouchmove = onTouchMove;
 	c.ontouchend = onTouchEnd;
 	//【临时】向移动端（单点触控）兼容：结束。 [TEMPORARY]Compatible with mobile terminal (single touch): end.
+	m.onclick = c.onclick = function(event){event.stopPropagation();}//阻止点击事件冒泡到主体。 Prevent onclick events from bubbling to the body.
+	sh.onclick = function(event){
+		event.stopPropagation();//阻止点击事件冒泡到主体。 Prevent onclick events from bubbling to the body.
+		sh.style.display = m.style.display = 'none';//隐藏菜单和遮罩。 Hide the menu and the shield.
+	}
 }
 //以下是菜单功能。 The following are menu functions.
+function dip(pigment){//调色板普通蘸取动作。 Normal dipping action on the palette.
+	pigment.parentNode.parentNode.lastElementChild.firstElementChild.firstElementChild.value = ds.stroke = pigment.style.backgroundColor;//蘸取并展示颜色。 Dip and show the color.
+	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+}
+function blend(formula){//调色板自定义颜色动作。 Custom color action on the palette.
+	if(formula.length > 0){//判断输入框是否填入了内容。 Determine whether the input box is filled with content.
+		ds.stroke = formula;//依样设定颜色。 Set the color accordingly.
+	} else{//输入框没有任何内容。 Nothing in the input box.
+		delete ds.stroke;//删除颜色设定。 Delete the color setting.
+	}
+	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+}
+function undo(indicator){//撤销
+	if(s.children.length > 1) {
+		s.removeChild(s.lastElementChild);//移除最后一笔。 Remove the last stroke.
+		sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+	} else{
+		indicator.style.borderColor = "red";
+		setTimeout(function(){indicator.style.borderColor = "white";},500);
+	}
+}
 function download(){//下载
 	var blob = new Blob([c.innerHTML], {type: "application/octet-stream"});//将图片本体封装为二进制文件以便下载。 Encapsulate the picture ontology into a binary file for download.
 	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
@@ -76,15 +107,40 @@ function download(){//下载
 	aTag.download = "Painter.svg";//指定下载文件名。Specify the download file name.
 	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 	URL.revokeObjectURL(aTag.href);//释放已用过的二进制文件链接。 Release the used binary link.
-	m.style.display = "none";//隐藏自定义菜单。 Hide the custom menu.
+	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
 }
 </script>
 </head>
-<body style="margin:8px;background-color:blue" onload="bodyLoaded()"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel margin display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
+<body style="margin:0px;padding:8px;background-color:blue" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel margin display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
 <div id="Canvas" style="width:100%;height:100%;background-color:white;cursor:crosshair"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><style>polyline{fill:none;stroke:black}</style></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
-<div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449;justify-content:center;align-items:center" onclick="this.style.display = 'none'"><!--菜单与阴影。 The menu with its shadow.-->
-<table style="color:white;background-color:black;text-align:center"><!--菜单各项。 The menu items.-->
+<div id="Shield" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449"></div><!--遮罩。-->
+<div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;pointer-events:none"><!--菜单布局框架。 The menu layout frame.-->
+<table style="color:white;background-color:black;text-align:center;pointer-events:auto"><!--菜单各项。 The menu items.-->
+<tr><td><table id="palette"><!--调色盘 被级联样式表（CSS）选择器引用。 Referenced by CSS Selector.-->
+<style>
+#palette td{
+	width:25px;
+	height:25px;
+	padding:0
+}
+</style>
+<tr><td style="background-color:aqua" onclick="dip(this)"></td><td style="background-color:black" onclick="dip(this)"></td><td style="background-color:blue" onclick="dip(this)"></td><td style="background-color:fuchsia" onclick="dip(this)"></td></tr>
+<tr><td style="background-color:gray" onclick="dip(this)"></td><td style="background-color:green" onclick="dip(this)"></td><td style="background-color:lime" onclick="dip(this)"></td><td style="background-color:maroon" onclick="dip(this)"></td></tr>
+<tr><td style="background-color:navy" onclick="dip(this)"></td><td style="background-color:olive" onclick="dip(this)"></td><td style="background-color:purple" onclick="dip(this)"></td><td style="background-color:red" onclick="dip(this)"></td></tr>
+<tr><td style="background-color:silver" onclick="dip(this)"></td><td style="background-color:teal" onclick="dip(this)"></td><td style="background-color:white" onclick="dip(this)"></td><td style="background-color:yellow" onclick="dip(this)"></td></tr>
+<tr><td colspan="3"><input style="width:100%" placeholder="╮(╯▽╰)╭" style="pointer-events:none"></input></td><td onclick="blend(this.previousElementSibling.firstElementChild.value)">
+<svg height="25px" width="25px">
+<circle cx="13" cy="3" r="3" style="fill:white"/>
+<line x1="9" y1="7" x2="17" y2="7" style="stroke:white;stroke-width:3"/>
+<polygon points="11,7 11,20 13,24 15,20 15,7" style="stroke:white" />
+</svg>
+</td></tr><!--自定义颜色及确认按钮。 Customize color and confirm button.-->
+</table></td></tr>
 <tr><td>
+<svg height="20px" width="20px" style="border:1px solid white" onclick="undo(this)">
+<path d="M 4 17 L 11 17 A 6 6, 0, 0 0, 11 5 L 6 5" style="stroke:white;stroke-width:3" />
+<polygon points="7,1 2,5 7,9" style="fill:white" />
+</svg>
 <svg height="20px" width="20px" style="border:1px solid white" onclick="download()">
 <line x1="10" y1="0" x2="10" y2="10" style="stroke:white;stroke-width:3" />
 <polygon points="5,10 10,15 15,10" style="fill:white" />
