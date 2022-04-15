@@ -19,7 +19,7 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	function drop(event){//落笔。 Drop the brush.
 		d = document.createElementNS("http://www.w3.org/2000/svg","polyline");//准备绘制一条折线。 Prepare to draw a polyline.
 		d.setAttribute("points",event.offsetX+","+event.offsetY);//根据鼠标位置设置起点坐标。 Set the starting point coordinate according to the mouse position.
-		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
+		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'').replace(/_/g,'-');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
 		s.appendChild(d);//绘入。 Draw in.
 	}
 	function firstDrop(event){//首次落笔。 Drop the brush for the first time.
@@ -79,6 +79,32 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	}
 }
 //以下是菜单功能。 The following are menu functions.
+function strength(sign){//力度
+	var much = parseInt(sign.value);//将输入内容转为要设定的值。 Convert the input string to the value to be set.
+	if(!much){//没有任何内容或者转化失败。 No content or conversion failed.
+		delete ds.stroke_width;//删除笔画宽度设定。 Delete the stroke width setting.
+		sign.parentNode.parentNode.previousElementSibling.cells[1].firstElementChild.style.strokeWidth = sign.value = "";//删除展示值。 Delete the display value.
+	} else{//有效的输入。 Valid input.
+		sign.parentNode.parentNode.previousElementSibling.cells[1].firstElementChild.style.strokeWidth = sign.value = ds.stroke_width = much;//设定并展示最终笔画宽度。 Set and display the final stroke width.
+	}
+	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+}
+function strength_reduce(sign){//减小力度
+	if(ds.stroke_width > 1){//如果可以继续减小。 If it can be reduced.
+		sign.parentNode.parentNode.previousElementSibling.cells[1].firstElementChild.style.strokeWidth = sign.value = --ds.stroke_width;//减小并展示最终笔画宽度。 Reduce and display the final stroke width.
+		sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+	} else{//已经是最小值。 It is already the minimum.
+		sign.style.borderColor = "red";//改变边框颜色以警示操作无法执行。 Change the border color to warn that the operation cannot be performed.
+		setTimeout(function(){sign.style.borderColor = "white";},500);//半秒后恢复原色。 Restore the primary color in half a second.
+	}
+}
+function strength_increase(sign){//增大力度
+	if(!ds.stroke_width){//如果未设定值。 If no value was set.
+		ds.stroke_width = 1;//代入默认值。 Substitute the default value.
+	}
+	sign.parentNode.parentNode.previousElementSibling.cells[1].firstElementChild.style.strokeWidth = sign.value = ++ds.stroke_width;//增大并展示最终笔画宽度。 Increase and display the final stroke width.
+	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+}
 function dip(pigment){//调色板普通蘸取动作。 Normal dipping action on the palette.
 	pigment.parentNode.parentNode.lastElementChild.firstElementChild.firstElementChild.value = ds.stroke = pigment.style.backgroundColor;//蘸取并展示颜色。 Dip and show the color.
 	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
@@ -92,12 +118,12 @@ function blend(formula){//调色板自定义颜色动作。 Custom color action 
 	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
 }
 function undo(indicator){//撤销
-	if(s.children.length > 1) {
+	if(s.children.length > 1) {//判断是否存在笔画。 Determine whether there are strokes.
 		s.removeChild(s.lastElementChild);//移除最后一笔。 Remove the last stroke.
 		sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
-	} else{
-		indicator.style.borderColor = "red";
-		setTimeout(function(){indicator.style.borderColor = "white";},500);
+	} else{//画布上已经没有任何笔画。 There are no more strokes on the canvas.
+		indicator.style.borderColor = "red";//改变边框颜色以警示操作无法执行。 Change the border color to warn that the operation cannot be performed.
+		setTimeout(function(){indicator.style.borderColor = "white";},500);//半秒后恢复原色。 Restore the primary color in half a second.
 	}
 }
 function download(){//下载
@@ -111,11 +137,39 @@ function download(){//下载
 }
 </script>
 </head>
-<body style="margin:0px;padding:8px;background-color:blue" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel margin display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
+<body style="margin:0px;padding:8px;background-color:blue" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel padding display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
 <div id="Canvas" style="width:100%;height:100%;background-color:white;cursor:crosshair"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><style>polyline{fill:none;stroke:black}</style></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
 <div id="Shield" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449"></div><!--遮罩。-->
 <div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;pointer-events:none"><!--菜单布局框架。 The menu layout frame.-->
 <table style="color:white;background-color:black;text-align:center;pointer-events:auto"><!--菜单各项。 The menu items.-->
+<tr><td><table id="strokeWeight"><!--笔画粗细 被级联样式表（CSS）选择器引用。 Referenced by CSS Selector.-->
+<style>
+#strokeWeight td{
+	width:25px;
+	height:25px;
+	padding:0
+}
+</style>
+<tr><td onclick="strength_reduce(this.parentNode.nextElementSibling.firstElementChild.firstElementChild)">
+<svg height="25px" width="25px" style="stroke:white;stroke-width:3">
+<line x1="4" y1="12" x2="21" y2="12" />
+</svg>
+</td><td><svg height="25px" width="50px"><line x1="25" y1="0" x2="25" y2="25" style="stroke:aqua"/></svg></td><td onclick="strength_increase(this.parentNode.nextElementSibling.firstElementChild.firstElementChild)">
+<svg height="25px" width="25px" style="stroke:white;stroke-width:3">
+<line x1="5" y1="12" x2="21" y2="12" />
+<line x1="13" y1="4" x2="13" y2="20" />
+</svg>
+</td></tr>
+<tr><td colspan="2"><input style="width:100%" placeholder="╮(╯▽╰)╭"></input></td><td onclick="strength(this.previousElementSibling.firstElementChild)">
+<svg height="25px" width="25px" style="stroke:white;stroke-width:2">
+<rect x="9" y="1" width="7" height="23" />
+<line x1="9" y1="5" x2="13" y2="5" />
+<line x1="9" y1="10" x2="12" y2="10" />
+<line x1="9" y1="15" x2="13" y2="15" />
+<line x1="9" y1="20" x2="12" y2="20" />
+</svg>
+</td></tr><!--自定义颜色及确认按钮。 Customize color and confirm button.-->
+</table></td></tr>
 <tr><td><table id="palette"><!--调色盘 被级联样式表（CSS）选择器引用。 Referenced by CSS Selector.-->
 <style>
 #palette td{
@@ -128,7 +182,7 @@ function download(){//下载
 <tr><td style="background-color:gray" onclick="dip(this)"></td><td style="background-color:green" onclick="dip(this)"></td><td style="background-color:lime" onclick="dip(this)"></td><td style="background-color:maroon" onclick="dip(this)"></td></tr>
 <tr><td style="background-color:navy" onclick="dip(this)"></td><td style="background-color:olive" onclick="dip(this)"></td><td style="background-color:purple" onclick="dip(this)"></td><td style="background-color:red" onclick="dip(this)"></td></tr>
 <tr><td style="background-color:silver" onclick="dip(this)"></td><td style="background-color:teal" onclick="dip(this)"></td><td style="background-color:white" onclick="dip(this)"></td><td style="background-color:yellow" onclick="dip(this)"></td></tr>
-<tr><td colspan="3"><input style="width:100%" placeholder="╮(╯▽╰)╭" style="pointer-events:none"></input></td><td onclick="blend(this.previousElementSibling.firstElementChild.value)">
+<tr><td colspan="3"><input style="width:100%" placeholder="╮(╯▽╰)╭"></input></td><td onclick="blend(this.previousElementSibling.firstElementChild.value)">
 <svg height="25px" width="25px">
 <circle cx="13" cy="3" r="3" style="fill:white"/>
 <line x1="9" y1="7" x2="17" y2="7" style="stroke:white;stroke-width:3"/>
