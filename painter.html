@@ -19,7 +19,7 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	function drop(event){//落笔。 Drop the brush.
 		d = document.createElementNS("http://www.w3.org/2000/svg","polyline");//准备绘制一条折线。 Prepare to draw a polyline.
 		d.setAttribute("points",event.offsetX+","+event.offsetY);//根据鼠标位置设置起点坐标。 Set the starting point coordinate according to the mouse position.
-		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'').replace(/_/g,'-');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
+		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'').replace(/,/g,';').replace(/_/g,'-');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
 		s.appendChild(d);//绘入。 Draw in.
 	}
 	function firstDrop(event){//首次落笔。 Drop the brush for the first time.
