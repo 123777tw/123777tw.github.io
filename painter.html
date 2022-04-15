@@ -23,8 +23,8 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 		s.appendChild(d);//绘入。 Draw in.
 	}
 	function firstDrop(event){//首次落笔。 Drop the brush for the first time.
-		c.style.width = Math.floor(getComputedStyle(c).width);//固定画布宽度。 Fix the canvas width.
-		c.style.height = Math.floor(getComputedStyle(c).height);//固定画布高度。 Fix the canvas height.
+		c.style.width = parseInt(getComputedStyle(c).width);//固定画布宽度。 Fix the canvas width.
+		c.style.height = parseInt(getComputedStyle(c).height);//固定画布高度。 Fix the canvas height.
 		s.setAttribute("width",c.offsetWidth);//固定图片宽度。 Fix the picture width.
 		s.setAttribute("height",c.offsetHeight);//固定图片高度。 Fix the picture height.
 		c.parentNode.style.backgroundColor = "grey";//将页面主体背景设置为灰色。 Set the page body background to gray.
