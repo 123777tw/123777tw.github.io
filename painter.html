@@ -9,14 +9,24 @@ var c;//用于存储画布节点以复用。 Used to store the canvas node for r
 var s;//用于存储图片本体节点以复用。 Used to store the picture ontology node for reuse.
 var sh;//用于存储遮罩节点以复用。 Used to store the shield node for reuse.
 var m;//用于存储菜单节点以复用。 Used to store the menu node for reuse.
-var d = undefined;//用于缓存每个笔划。 Used to cache each stroke.
+var d = undefined;//用于缓存每个笔画。 Used to cache each stroke.
 var ds = {};//用于存储笔画的额外的样式设置。 Used to store additional style settings of the stroke.
 function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完毕以后执行。 All event response related codes is executed after static DOM rendering.
 	c = document.getElementById("Canvas");//找出画布节点。 Find the canvas node.
 	s = c.firstElementChild;//找出图片本体节点。 Find out the picture ontology node.
 	sh = document.getElementById("Shield");//找出遮罩节点。 Find the shield node.
 	m = document.getElementById("Menu");//找出菜单节点。 Find out the menu node.
+	function _clean(){//清理
+		if(s.children.length < 2) return false;//如果不存在笔画不做任何额外处理。 No more processing if there are no strokes.
+		var p = s.lastElementChild.getAttribute("points").split(' ');//获取最后一笔经过的所有坐标。 Gets all coordinates that the last stroke passes through.
+		for(var i = p.length-1; i > 0; i--){//遍历坐标。 Traverse the coordinates.
+			if(p[i] != p[i-1]) return false;//当发现任何不同的坐标时不做任何额外处理。 No more processing when any different coordinates are found.
+		}
+		s.removeChild(s.lastElementChild);//撤销当前笔画，因为它没有任何大小。 Undo the current stroke because it does not have any size.
+		return true;//表示已清理。 Indicate that it has been cleaned.
+	}
 	function drop(event){//落笔。 Drop the brush.
+		_clean();//=> bodyLoaded()
 		d = document.createElementNS("http://www.w3.org/2000/svg","polyline");//准备绘制一条折线。 Prepare to draw a polyline.
 		d.setAttribute("points",event.offsetX+","+event.offsetY);//根据鼠标位置设置起点坐标。 Set the starting point coordinate according to the mouse position.
 		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'').replace(/,/g,';').replace(/_/g,'-');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
@@ -33,13 +43,7 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	}
 	function lift(event){//抬笔。 Lift the brush.
 		if(d != undefined){//盘错：确认已经落笔。 Eliminate accidents: Confirm the brush dropped.
-			d.setAttribute("points",d.getAttribute("points")+" "+event.offsetX+","+event.offsetY); //根据鼠标位置追加终点坐标。 Add the stop coordinate according to the mouse position.
-			var p = d.getAttribute("points").split(' ');//获取当前笔划经过的所有坐标。 Gets all coordinates that the current stroke passes through.
-			d = undefined;//当前笔划完成。 The current stroke is complete.
-			for(var i = p.length-1; i > 0; i--){//遍历坐标。 Traverse the coordinates.
-				if(p[i] != p[i-1]) return;//当发现任何不同的坐标时不做任何额外处理。 No more processing when any different coordinates are found.
-			}
-			s.removeChild(s.lastElementChild);//撤销当前笔划，因为它没有任何大小。 Undo the current stroke because it does not have any size.
+			d = undefined;//当前笔画完成。 The current stroke is complete.
 		}
 	}
 	function wield(event){//挥笔。Wield the brush.
@@ -50,6 +54,7 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	function others(event){//其他操作。 Other operations.
 		event.preventDefault();//取消默认菜单显示。 Cancel the default menu display.
 		event.stopPropagation();//阻止事件冒泡。 Prevent the event bubbling.
+		s.removeChild(s.lastElementChild);//移除最后一笔。 Remove the last stroke.
 		sh.style.display = m.style.display = "flex";//显示菜单和遮罩。 Show the menu and the shield.
 	}
 	c.onmousedown = firstDrop;//绑定首次鼠标按下事件。 Bind the first onmousedown event.
