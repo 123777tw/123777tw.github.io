@@ -1,4 +1,4 @@
-<html>
+<html style="height:100%">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><!--声明此文件的编码格式是UTF-8，用于提高与其他环境的兼容性。 Declare that the encoding format of this file is UTF-8, which is used to improve the compatibility with other environments.-->
 <meta name="viewport" content="width=device-width,initial-scale=1.0"><!--声明视口宽度与可视区域宽度一致，用于改善移动设备上的使用体验。 Declare that the viewport width is consistent with the visual area width, which is used to improve the use experience on mobile devices.-->
@@ -142,7 +142,7 @@ function download(){//下载
 }
 </script>
 </head>
-<body style="margin:0px;padding:8px;background-color:blue" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel padding display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
+<body style="height:100%;box-sizing:border-box;margin:0px;padding:8px;background-color:blue" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel padding display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
 <div id="Canvas" style="width:100%;height:100%;background-color:white;cursor:crosshair"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><style>polyline{fill:none;stroke:black}</style></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
 <div id="Shield" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449"></div><!--遮罩。-->
 <div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;pointer-events:none"><!--菜单布局框架。 The menu layout frame.-->
