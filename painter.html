@@ -9,6 +9,8 @@ var c;//用于存储画布节点以复用。 Used to store the canvas node for r
 var s;//用于存储图片本体节点以复用。 Used to store the picture ontology node for reuse.
 var sh;//用于存储遮罩节点以复用。 Used to store the shield node for reuse.
 var m;//用于存储菜单节点以复用。 Used to store the menu node for reuse.
+var G = {};//用于存储全局设置。 Used to store global settings.
+G._menuLock = false;//菜单锁
 var d = undefined;//用于缓存每个笔画。 Used to cache each stroke.
 var ds = {};//用于存储笔画的额外的样式设置。 Used to store additional style settings of the stroke.
 function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完毕以后执行。 All event response related codes is executed after static DOM rendering.
@@ -92,12 +94,12 @@ function strength(sign){//力度
 	} else{//有效的输入。 Valid input.
 		sign.parentNode.parentNode.previousElementSibling.cells[1].firstElementChild.style.strokeWidth = sign.value = ds.stroke_width = much;//设定并展示最终笔画宽度。 Set and display the final stroke width.
 	}
-	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 }
 function strength_reduce(sign){//减小力度
 	if(ds.stroke_width > 1){//如果可以继续减小。 If it can be reduced.
 		sign.parentNode.parentNode.previousElementSibling.cells[1].firstElementChild.style.strokeWidth = sign.value = --ds.stroke_width;//减小并展示最终笔画宽度。 Reduce and display the final stroke width.
-		sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+		if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 	} else{//已经是最小值。 It is already the minimum.
 		sign.style.borderColor = "red";//改变边框颜色以警示操作无法执行。 Change the border color to warn that the operation cannot be performed.
 		setTimeout(function(){sign.style.borderColor = "white";},500);//半秒后恢复原色。 Restore the primary color in half a second.
@@ -108,11 +110,11 @@ function strength_increase(sign){//增大力度
 		ds.stroke_width = 1;//代入默认值。 Substitute the default value.
 	}
 	sign.parentNode.parentNode.previousElementSibling.cells[1].firstElementChild.style.strokeWidth = sign.value = ++ds.stroke_width;//增大并展示最终笔画宽度。 Increase and display the final stroke width.
-	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 }
 function dip(pigment){//调色板普通蘸取动作。 Normal dipping action on the palette.
 	pigment.parentNode.parentNode.lastElementChild.firstElementChild.firstElementChild.value = ds.stroke = pigment.style.backgroundColor;//蘸取并展示颜色。 Dip and show the color.
-	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 }
 function blend(formula){//调色板自定义颜色动作。 Custom color action on the palette.
 	if(formula.length > 0){//判断输入框是否填入了内容。 Determine whether the input box is filled with content.
@@ -120,12 +122,12 @@ function blend(formula){//调色板自定义颜色动作。 Custom color action 
 	} else{//输入框没有任何内容。 Nothing in the input box.
 		delete ds.stroke;//删除颜色设定。 Delete the color setting.
 	}
-	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 }
 function undo(indicator){//撤销
 	if(s.children.length > 1) {//判断是否存在笔画。 Determine whether there are strokes.
 		s.removeChild(s.lastElementChild);//移除最后一笔。 Remove the last stroke.
-		sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+		if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 	} else{//画布上已经没有任何笔画。 There are no more strokes on the canvas.
 		indicator.style.borderColor = "red";//改变边框颜色以警示操作无法执行。 Change the border color to warn that the operation cannot be performed.
 		setTimeout(function(){indicator.style.borderColor = "white";},500);//半秒后恢复原色。 Restore the primary color in half a second.
@@ -138,7 +140,18 @@ function download(){//下载
 	aTag.download = "Painter.svg";//指定下载文件名。Specify the download file name.
 	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 	URL.revokeObjectURL(aTag.href);//释放已用过的二进制文件链接。 Release the used binary link.
-	sh.style.display = m.style.display = "none";//隐藏菜单和遮罩。 Hide the menu and the shield.
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
+}
+G.changeMenuLock = function(indicator){//改变菜单锁
+	if(G._menuLock){//如果已上锁
+		G._menuLock = false;//解锁。 Unlock.
+		indicator.style.borderColor = "white";//改变边框颜色表示已解锁。 Change the border color to indicate that it is unlocked.
+		indicator.firstElementChild.setAttribute("d","M 14 10 L 14 7 A 4 4, 0, 0 0, 6 7");//改变锁头样式为解锁。 Change the lock style to unlocked.
+	}else{//没上锁
+		G._menuLock = true;//上锁。 Lock.
+		indicator.style.borderColor = "aqua";//改变边框颜色表示已上锁。 Change the border color to indicate that it is locked.
+		indicator.firstElementChild.setAttribute("d","M 14 10 L 14 7 A 4 4, 0, 0 0, 6 7 L 6 10");//改变锁头样式为上锁。 Change the lock style to locked.
+	}
 }
 </script>
 </head>
@@ -205,6 +218,10 @@ function download(){//下载
 <polygon points="5,10 10,15 15,10" style="fill:white" />
 <rect x="1" y="16" width="17" height="3" style="stroke:white;stroke-width:2" />
 <line x1="15" y1="16" x2="15" y2="19" style="stroke:white;stroke-width:2" />
+</svg>
+<svg height="20px" width="20px" style="border:1px solid white" onclick="G.changeMenuLock(this)">
+<path d="M 14 10 L 14 7 A 4 4, 0, 0 0, 6 7" style="stroke:white;stroke-width:3" />
+<rect x="4" y="10" width="12" height="7" style="stroke:white;stroke-width:2" />
 </svg>
 </td></tr>
 </table>
