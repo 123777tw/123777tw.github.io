@@ -11,26 +11,99 @@ var sh;//用于存储遮罩节点以复用。 Used to store the shield node for 
 var m;//用于存储菜单节点以复用。 Used to store the menu node for reuse.
 var G = {};//用于存储全局设置。 Used to store global settings.
 G._menuLock = false;//菜单锁
+G._showExtendedMenu = false;//显示扩展菜单
+G._needClean = false;//需要清理
+G.equips = {//绘画工具
+	shapes:[{tag:"polyline"},{tag:"polyline"},{tag:"rect",dx:0,dy:0},{tag:"ellipse"}],//涂鸦、直线、矩形、椭圆。 Graffity, straight line, rectangle, ellipse.
+	current:0,//默认为涂鸦。 The default is graffiti.
+};
+//判断笔画是否可见的个性化步骤：开始。 Personalized steps to determine whether the stroke is visible: start.
+G.equips.shapes[0]._visable = G.equips.shapes[1]._visable = function(ld){//涂鸦、直线。 Graffity, straight line.
+	var p = ld.getAttribute("points").split(' ');//获取最后一笔经过的所有坐标。 Gets all coordinates that the last stroke passes through.
+	for(var i = p.length-1; i > 0; i--){//遍历坐标。 Traverse the coordinates.
+		if(p[i] != p[i-1]) return true;//当发现任何不同的坐标时返回真。 Return true when any different coordinates are found.
+	}
+	return false;//不可见，返回假。 Invisible, return false.
+}
+G.equips.shapes[2]._visable = function(ld){//矩形。 rectangle.
+	if(ld.getAttribute("width")*ld.getAttribute("height") > 0) return true;//当宽度和高度均不为零时返回真。 Return true when neither width nor height is zero.
+	return false;//不可见，返回假。 Invisible, return false.
+}
+G.equips.shapes[3]._visable = function(ld){//椭圆。 ellipse.
+	if(ld.getAttribute("rx")*ld.getAttribute("ry") > 0) return true;//当水平半径和垂直半径均不为零时返回真。 Return true when neither the horizontal radius nor the vertical radius is zero.
+	return false;//不可见，返回假。 Invisible, return false.
+}
+//判断笔画是否可见的个性化步骤：结束。 Personalized steps to determine whether the stroke is visible: end.
+//落笔时的个性化步骤：开始。 Personalization steps during dropping: start.
+G.equips.shapes[0].drop = G.equips.shapes[1].drop = function(x,y){//涂鸦、直线。 Graffity, straight line.
+	var dd = document.createElementNS("http://www.w3.org/2000/svg","polyline");//准备绘制形状。 Prepare to draw a shape.
+	dd.setAttribute("points",x+","+y);//根据鼠标位置设置起点坐标。 Set the starting point coordinate according to the mouse position.
+	return dd;//返回准备好的节点。 Retrun the prepared node.
+}
+G.equips.shapes[2].drop = function(x,y){//矩形。 rectangle.
+	this.dx = x;//记录落笔x坐标。 Record the dropping X coordinate.
+	this.dy = y;//记录落笔y坐标。 Record the dropping Y coordinate.
+	var dd = document.createElementNS("http://www.w3.org/2000/svg","rect");//准备绘制形状。 Prepare to draw a shape.
+	dd.setAttribute("x",x);//根据鼠标位置设置起点x坐标。 Set the starting point X coordinate according to the mouse position.
+	dd.setAttribute("y",y);//根据鼠标位置设置起点y坐标。 Set the starting point Y coordinate according to the mouse position.
+	dd.setAttribute("width",0);//设置宽度为零。 Set the width to zero.
+	dd.setAttribute("height",0);//设置高度为零。Set the height to zero.
+	return dd;//返回准备好的节点。 Retrun the prepared node.
+}
+G.equips.shapes[3].drop = function(x,y){//椭圆。 ellipse.
+	var dd = document.createElementNS("http://www.w3.org/2000/svg","ellipse");//准备绘制形状。 Prepare to draw a shape.
+	dd.setAttribute("cx",x);//根据鼠标位置设置圆点x坐标。 Set the center X coordinate according to the mouse position.
+	dd.setAttribute("cy",y);//根据鼠标位置设置圆点y坐标。 Set the center Y coordinate according to the mouse position.
+	dd.setAttribute("rx",0);//设置水平半径为零。 Set the horizontal radius to zero.
+	dd.setAttribute("ry",0);//设置垂直半径为零。Set the vertical radius to zero.
+	return dd;//返回准备好的节点。 Retrun the prepared node.
+}
+//落笔时的个性化步骤：结束。 Personalization steps during dropping: end.
+//挥笔时的个性化步骤：开始。 Personalization steps during wielding: start.
+G.equips.shapes[0].wield = function(dd,x,y){//涂鸦。 Graffity.
+	dd.setAttribute("points",dd.getAttribute("points")+" "+x+","+y); //根据鼠标位置追加延续坐标。 Add the continuation coordinate according to the mouse position.
+}
+G.equips.shapes[1].wield = function(dd,x,y){//直线。 Straight line.
+	dd.setAttribute("points",dd.getAttribute("points").split(' ')[0]+" "+x+","+y); //根据鼠标位置修改延续坐标。 Modify the continuation coordinate according to the mouse position.
+}
+G.equips.shapes[2].wield = function(dd,x,y){//矩形。 rectangle.
+	if(x < this.dx){//如果当前鼠标位置在落笔位置的左边。 If the current mouse position is to the left of the drop position.
+		dd.setAttribute("x",x);//重置x属性的值。 Reset the value of the X attribute.
+		dd.setAttribute("width",this.dx-x);//重新计算并赋值width属性。 Recalculate and assign the width attribute.
+	}else{//当前鼠标位置不在落笔位置的左边。 The current mouse position is not to the left of the drop position.
+		dd.setAttribute("width",x-this.dx);//仅需重新计算并赋值width属性。 Simply recalculate and assign the width attribute.
+	}
+	if(y < this.dy){//如果当前鼠标位置在落笔位置的上边。 If the current mouse position is above the drop position.
+		dd.setAttribute("y",y);//重置y属性的值。 Reset the value of the Y attribute.
+		dd.setAttribute("height",this.dy-y);//重新计算并赋值height属性。 Recalculate and assign the height attribute.
+	}else{//当前鼠标位置不在落笔位置的上边。 The current mouse position is not above the drop position.
+		dd.setAttribute("height",y-this.dy);//仅需重新计算并赋值height属性。 Simply recalculate and assign the height attribute.
+	}
+}
+G.equips.shapes[3].wield = function(dd,x,y){//椭圆。 ellipse.
+	dd.setAttribute("rx",Math.abs(x-dd.getAttribute("cx")));//重新计算并赋值rx属性。 Recalculate and assign the rx attribute.
+	dd.setAttribute("ry",Math.abs(y-dd.getAttribute("cy")));//重新计算并赋值ry属性。 Recalculate and assign the ry attribute.
+}
+//挥笔时的个性化步骤：结束。 Personalization steps during wielding: end.
 var d = undefined;//用于缓存每个笔画。 Used to cache each stroke.
-var ds = {};//用于存储笔画的额外的样式设置。 Used to store additional style settings of the stroke.
+var ds = {stroke:"black"};//用于存储笔画的额外的样式设置。 Used to store additional style settings of the stroke.
 function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完毕以后执行。 All event response related codes is executed after static DOM rendering.
 	c = document.getElementById("Canvas");//找出画布节点。 Find the canvas node.
 	s = c.firstElementChild;//找出图片本体节点。 Find out the picture ontology node.
 	sh = document.getElementById("Shield");//找出遮罩节点。 Find the shield node.
 	m = document.getElementById("Menu");//找出菜单节点。 Find out the menu node.
 	function _clean(){//清理
-		if(s.children.length < 2) return false;//如果不存在笔画不做任何额外处理。 No more processing if there are no strokes.
-		var p = s.lastElementChild.getAttribute("points").split(' ');//获取最后一笔经过的所有坐标。 Gets all coordinates that the last stroke passes through.
-		for(var i = p.length-1; i > 0; i--){//遍历坐标。 Traverse the coordinates.
-			if(p[i] != p[i-1]) return false;//当发现任何不同的坐标时不做任何额外处理。 No more processing when any different coordinates are found.
-		}
+		if(!G._needClean) return false;//无需清理不做任何额外处理。 No more processing if no cleaning required.
+		G._needClean = false;//只需要清理一次。 It only needs to be cleaned once.
+		if(s.children.length < 1) return false;//如果不存在笔画不做任何额外处理。 No more processing if there are no strokes.
+		if(G.equips.shapes[G.equips.current]._visable(s.lastElementChild)){return false;}//如果最后一笔可见不做任何额外处理。 No more processing when the last stroke is visible.
 		s.removeChild(s.lastElementChild);//撤销当前笔画，因为它没有任何大小。 Undo the current stroke because it does not have any size.
 		return true;//表示已清理。 Indicate that it has been cleaned.
 	}
 	function drop(event){//落笔。 Drop the brush.
 		_clean();//=> bodyLoaded()
-		d = document.createElementNS("http://www.w3.org/2000/svg","polyline");//准备绘制一条折线。 Prepare to draw a polyline.
-		d.setAttribute("points",event.offsetX+","+event.offsetY);//根据鼠标位置设置起点坐标。 Set the starting point coordinate according to the mouse position.
+		G._needClean = true;//产生新笔划可能需要清理。 A new stroke may require cleanup.
+		d = G.equips.shapes[G.equips.current].drop(event.offsetX,event.offsetY);//调用当前绘画工具的个性化步骤以获得适当的节点。 Call the personalization step of the current equip to get the appropriate node.
 		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'').replace(/,/g,';').replace(/_/g,'-');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
 		s.appendChild(d);//绘入。 Draw in.
 	}
@@ -44,19 +117,18 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 		c.onmousedown = drop;//重新绑定鼠标按下事件。 Rebind the onmousedown event.
 	}
 	function lift(event){//抬笔。 Lift the brush.
-		if(d != undefined){//盘错：确认已经落笔。 Eliminate accidents: Confirm the brush dropped.
-			d = undefined;//当前笔画完成。 The current stroke is complete.
-		}
+		d = undefined;//当前笔画完成。 The current stroke is complete.
 	}
 	function wield(event){//挥笔。Wield the brush.
 		if(d != undefined){//盘错：确认已经落笔。 Eliminate accidents: Confirm the brush dropped.
-			d.setAttribute("points",d.getAttribute("points")+" "+event.offsetX+","+event.offsetY); //根据鼠标位置追加延续坐标。 Add the continuation coordinate according to the mouse position.
+			G.equips.shapes[G.equips.current].wield(d,event.offsetX,event.offsetY);//根据当前绘画工具的个性化步骤执行挥笔动作。 Perform wielding according to the personalized steps of the current equip.
 		}
 	}
 	function others(event){//其他操作。 Other operations.
 		event.preventDefault();//取消默认菜单显示。 Cancel the default menu display.
 		event.stopPropagation();//阻止事件冒泡。 Prevent the event bubbling.
 		s.removeChild(s.lastElementChild);//移除最后一笔。 Remove the last stroke.
+		G._needClean = false;//无效笔划已清理。 The invalid stroke cleaned.
 		sh.style.display = m.style.display = "flex";//显示菜单和遮罩。 Show the menu and the shield.
 	}
 	c.onmousedown = firstDrop;//绑定首次鼠标按下事件。 Bind the first onmousedown event.
@@ -116,13 +188,27 @@ function dip(pigment){//调色板普通蘸取动作。 Normal dipping action on 
 	pigment.parentNode.parentNode.lastElementChild.firstElementChild.firstElementChild.value = ds.stroke = pigment.style.backgroundColor;//蘸取并展示颜色。 Dip and show the color.
 	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 }
+function scoop(pigment){//调色板普通舀取动作。 Normal scooping action on the palette.
+	pigment.parentNode.parentNode.lastElementChild.firstElementChild.firstElementChild.value = ds.fill = pigment.style.backgroundColor;//舀取并展示颜色。 Scoop and show the color.
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
+}
 function blend(formula){//调色板自定义颜色动作。 Custom color action on the palette.
 	if(formula.length > 0){//判断输入框是否填入了内容。 Determine whether the input box is filled with content.
 		ds.stroke = formula;//依样设定颜色。 Set the color accordingly.
 	} else{//输入框没有任何内容。 Nothing in the input box.
 		delete ds.stroke;//删除颜色设定。 Delete the color setting.
+		G._showExtendedMenu = false;//准备强制展开扩展菜单。 Ready to force expand extended menu.
+		document.getElementById("ExMenuSwitch").onclick();//强制展开扩展菜单以提醒设置填充颜色。 Force expand extended menu to remind to set the fill color.
+		return;//防止菜单隐藏。 Prevent the menu from being hidden.
 	}
 	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
+}
+function spill(formula){//调色板2自定义颜色动作。 Custom color action on the palette 2.
+	if(formula.length > 0){//判断输入框是否填入了内容。 Determine whether the input box is filled with content.
+		ds.fill = formula;//依样设定颜色。 Set the color accordingly.
+	} else{//输入框没有任何内容。 Nothing in the input box.
+		delete ds.fill;//删除颜色设定。 Delete the color setting.
+	}
 }
 function undo(indicator){//撤销
 	if(s.children.length > 1) {//判断是否存在笔画。 Determine whether there are strokes.
@@ -153,12 +239,33 @@ G.changeMenuLock = function(indicator){//改变菜单锁
 		indicator.firstElementChild.setAttribute("d","M 14 10 L 14 7 A 4 4, 0, 0 0, 6 7 L 6 10");//改变锁头样式为上锁。 Change the lock style to locked.
 	}
 }
+G.toggleExtendedMenu = function(indicator){//切换扩展菜单
+	if(G._showExtendedMenu){//如果当前展示
+		m.lastElementChild.style.display = 'none';//隐藏扩展菜单。 Hide extended menu.
+		G._showExtendedMenu = false;//记录状态为已折叠。 Record current status as collapsed.
+		indicator.style.borderColor = "white";//改变边框颜色表示已折叠。 Change the border color to indicate that it is collapsed.
+		indicator.firstElementChild.removeAttribute("transform");//改变图案样式为引导展开。 Change the pattern style to expanding.
+	}else{//当前不展示
+		m.lastElementChild.style.display = null;//显示扩展菜单。 Show extended menu.
+		G._showExtendedMenu = true;//记录状态为已展开。 Record current status as expanded.
+		indicator.style.borderColor = "aqua";//改变边框颜色表示已展开。 Change the border color to indicate that it is expanded.
+		indicator.firstElementChild.setAttribute("transform","rotate(180,10,10)");//改变图案样式为引导折叠。 Change the pattern style to collapsing.
+	}
+}
+G.equips.change = function(indicators,index){//更换绘画工具
+	for(var i = 0; i < this.shapes.length; i++){//遍历所有指示器。 Traverse all indicators.
+		if(i == index){indicators[i].style.borderColor = 'white';}//设置点选的指示器边框颜色为白色。 Set the selected indicator border color to white.
+		else {indicators[i].style.borderColor = 'navy';}//设置未点选的指示器边框颜色为海军蓝。 Set the indicator border color not clicked to Navy.
+	}
+	this.current = index;//在全局设置中记录当前选择的绘图工具。 Record the currently selected equip in the global settings.
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
+}
 </script>
 </head>
 <body style="height:100%;box-sizing:border-box;margin:0px;padding:8px;background-color:blue" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel padding display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
-<div id="Canvas" style="width:100%;height:100%;background-color:white;cursor:crosshair"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><style>polyline{fill:none;stroke:black}</style></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
+<div id="Canvas" style="width:100%;height:100%;background-color:white;cursor:crosshair"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="fill:none"></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
 <div id="Shield" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449"></div><!--遮罩。-->
-<div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;pointer-events:none"><!--菜单布局框架。 The menu layout frame.-->
+<div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;flex-wrap:wrap;pointer-events:none"><!--菜单布局框架。 The menu layout frame.-->
 <table style="color:white;background-color:black;text-align:center;pointer-events:auto"><!--菜单各项。 The menu items.-->
 <tr><td><table id="strokeWeight"><!--笔画粗细 被级联样式表（CSS）选择器引用。 Referenced by CSS Selector.-->
 <style>
@@ -200,7 +307,7 @@ G.changeMenuLock = function(indicator){//改变菜单锁
 <tr><td style="background-color:gray" onclick="dip(this)"></td><td style="background-color:green" onclick="dip(this)"></td><td style="background-color:lime" onclick="dip(this)"></td><td style="background-color:maroon" onclick="dip(this)"></td></tr>
 <tr><td style="background-color:navy" onclick="dip(this)"></td><td style="background-color:olive" onclick="dip(this)"></td><td style="background-color:purple" onclick="dip(this)"></td><td style="background-color:red" onclick="dip(this)"></td></tr>
 <tr><td style="background-color:silver" onclick="dip(this)"></td><td style="background-color:teal" onclick="dip(this)"></td><td style="background-color:white" onclick="dip(this)"></td><td style="background-color:yellow" onclick="dip(this)"></td></tr>
-<tr><td colspan="3"><input style="width:100%" placeholder="╮(╯▽╰)╭"></input></td><td onclick="blend(this.previousElementSibling.firstElementChild.value)">
+<tr><td colspan="3"><input style="width:100%" placeholder="╮(╯▽╰)╭" value="black"></input></td><td onclick="blend(this.previousElementSibling.firstElementChild.value)">
 <svg height="25px" width="25px">
 <circle cx="13" cy="3" r="3" style="fill:white"/>
 <line x1="9" y1="7" x2="17" y2="7" style="stroke:white;stroke-width:3"/>
@@ -223,7 +330,47 @@ G.changeMenuLock = function(indicator){//改变菜单锁
 <path d="M 14 10 L 14 7 A 4 4, 0, 0 0, 6 7" style="stroke:white;stroke-width:3" />
 <rect x="4" y="10" width="12" height="7" style="stroke:white;stroke-width:2" />
 </svg>
+<svg id="ExMenuSwitch" height="20px" width="20px" style="border:1px solid white" onclick="G.toggleExtendedMenu(this)"><!-- =>blend() -->
+<polygon points="2,2 10,10 10,2 18,10 10,18 10,10 2,18" style="fill:white"/>
+</svg>
 </td></tr>
+</table>
+<table style="color:white;background-color:navy;text-align:center;pointer-events:auto;display:none"><!--扩展菜单各项。 The extended menu items.-->
+<tr><td>
+<svg height="20px" width="20px" style="vertical-align:middle;border:1px solid white" onclick="G.equips.change(this.parentNode.children,0)">
+<polyline points="2,13 15,3 9,15 18,8" style="stroke:white;stroke-width:2" />
+</svg>
+<svg height="20px" width="20px" style="vertical-align:middle;border:1px solid navy" onclick="G.equips.change(this.parentNode.children,1)">
+<line x1="2" y1="2" x2="18" y2="18" style="stroke:white;stroke-width:2" />
+</svg>
+<svg height="20px" width="20px" style="vertical-align:middle;border:1px solid navy" onclick="G.equips.change(this.parentNode.children,2)">
+<rect x="3" y="4" width="14" height="12" style="stroke:white;stroke-width:2;fill:navy" />
+</svg>
+<svg height="20px" width="20px" style="vertical-align:middle;border:1px solid navy" onclick="G.equips.change(this.parentNode.children,3)">
+<ellipse cx="10" cy="10" rx="8" ry="6" style="stroke:white;stroke-width:2;fill:navy" />
+</svg>
+</td></tr>
+<tr><td><table id="palette2"><!--调色盘2 被级联样式表（CSS）选择器引用。 Referenced by CSS Selector.-->
+<style>
+#palette2 td{
+	width:25px;
+	height:25px;
+	padding:0
+}
+</style>
+<tr><td style="background-color:aqua" onclick="scoop(this)"></td><td style="background-color:black" onclick="scoop(this)"></td><td style="background-color:blue" onclick="scoop(this)"></td><td style="background-color:fuchsia" onclick="scoop(this)"></td></tr>
+<tr><td style="background-color:gray" onclick="scoop(this)"></td><td style="background-color:green" onclick="scoop(this)"></td><td style="background-color:lime" onclick="scoop(this)"></td><td style="background-color:maroon" onclick="scoop(this)"></td></tr>
+<tr><td style="background-color:navy" onclick="scoop(this)"></td><td style="background-color:olive" onclick="scoop(this)"></td><td style="background-color:purple" onclick="scoop(this)"></td><td style="background-color:red" onclick="scoop(this)"></td></tr>
+<tr><td style="background-color:silver" onclick="scoop(this)"></td><td style="background-color:teal" onclick="scoop(this)"></td><td style="background-color:white" onclick="scoop(this)"></td><td style="background-color:yellow" onclick="scoop(this)"></td></tr>
+<tr><td colspan="3"><input style="width:100%" placeholder="╮(╯▽╰)╭"></input></td><td onclick="spill(this.previousElementSibling.firstElementChild.value)">
+<svg height="25px" width="25px">
+<rect x="4" y="3" width="17" height="20" style="stroke:white;fill:navy" />
+<line x1="12" y1="3" x2="24" y2="16" style="stroke:white;stroke-width:2"/>
+<line x1="7" y1="3" x2="7" y2="13" style="stroke:white;stroke-width:2"/>
+<line x1="10" y1="3" x2="10" y2="10" style="stroke:white;stroke-width:2"/>
+</svg>
+</td></tr><!--自定义颜色及确认按钮。 Customize color and confirm button.-->
+</table></td></tr>
 </table>
 </div>
 </body>
