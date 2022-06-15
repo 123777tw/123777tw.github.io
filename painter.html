@@ -211,7 +211,7 @@ function spill(formula){//调色板2自定义颜色动作。 Custom color action
 	}
 }
 function undo(indicator){//撤销
-	if(s.children.length > 1) {//判断是否存在笔画。 Determine whether there are strokes.
+	if(s.children.length > 0) {//判断是否存在笔画。 Determine whether there are strokes.
 		s.removeChild(s.lastElementChild);//移除最后一笔。 Remove the last stroke.
 		if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 	} else{//画布上已经没有任何笔画。 There are no more strokes on the canvas.
