@@ -17,6 +17,7 @@ function getPreferences() {//获取偏好（）
 		document.getElementById("CheckBox0").checked = checkPreference & 1;
 		document.getElementById("CheckBox1").checked = checkPreference >> 1 & 1;
 		document.getElementById("CheckBox2").checked = checkPreference >> 2 & 1;
+		document.getElementById("CheckBox3").checked = checkPreference >> 3 & 1;
 		//结束。 End.
 	}
 	var sizePerFilePreferenceIndex = searchString.lastIndexOf("&sizePerFile=");//查找并存储最后一个每文件字节数偏好的位置。 Find and store the index of the last size per file preference.
@@ -36,6 +37,12 @@ function getPreferences() {//获取偏好（）
 		var millisecondPerFilePreferencePreprocessingString = searchString.substring(millisecondPerFilePreferenceIndex);//处理并存储每文件毫秒数偏好预处理字符串。 Process and store the millisecond per file preference preprocessing string.
 		var millisecondPerFilePreferenceStringEndIndex = millisecondPerFilePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储每文件毫秒数偏好结束位置。 Find and store the millisecond per file preference end index.
 		document.getElementById("MillisecondPerFile").value = millisecondPerFilePreferencePreprocessingString.substring(20, millisecondPerFilePreferenceStringEndIndex ? millisecondPerFilePreferenceStringEndIndex : undefined);//将传入的每文件毫秒数偏好输出到指定输入框。 Output the incoming millisecond per file preference to specified input box.
+	}
+	var dumpSizePreferenceIndex = searchString.lastIndexOf("&dumpSize=");//查找并存储最后一个转储字节数偏好的位置。 Find and store the index of the last dump size preference.
+	if(dumpSizePreferenceIndex != -1) {//如果指定了转储字节数偏好。 If a dump size preference are specified.
+		var dumpSizePreferencePreprocessingString = searchString.substring(dumpSizePreferenceIndex);//处理并存储转储字节数偏好预处理字符串。 Process and store the dump size preference preprocessing string.
+		var dumpSizePreferenceStringEndIndex = dumpSizePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储转储字节数偏好结束位置。 Find and store the dump size preference end index.
+		document.getElementById("DumpSize").value = dumpSizePreferencePreprocessingString.substring(10, dumpSizePreferenceStringEndIndex ? dumpSizePreferenceStringEndIndex : undefined);//将传入的转储字节数偏好输出到指定输入框。 Output the incoming dump size preference to specified input box.
 	}
 }
 </script>
@@ -202,6 +209,48 @@ function downloadAll1by1(olNodeChildren, interval) {//一个一个下载（序�
 	}, interval);//传入间歇时间。 Afferent the interval time.
 }
 </script>
+<hr style="border:1px solid" /><!--下面是一个附加的懒人工具。 The following is an additional lazy tool.-->
+转储数据到文件名懒人工具 Dump data to filename lazy tool
+<label style="display:block">转储 Dump<input type="text" id="DumpSize" value="9" /><!--节点id会在lazyDump2Filename函数实现中和偏好设置中被引用（在本文件内）。 The node id will be referenced in the function lazyDump2Filename implementation and the preference settings (in this file).-->字节 bytes</label>
+<label style="display:block"><input id="CheckBox3" type="checkbox" /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->从文件头部而不是尾部转储数据<div style="display:inline-block;margin-left:20px">Dump data from file header instead of tail</div></label>
+<input type="file" style="display:block" onchange="lazyDump2Filename(this.files[0])" /><!--lazyDump2Filename函数的实现在下面。The implementation of the function lazyDump2Filename is below.-->
+<script>
+function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主体）
+	var s = parseInt(document.getElementById("DumpSize").value);//根据之前定义的id获取到用户希望的转储字节数。这个数字之后会被多次引用。According to the previously defined ID, the desired number of dump bytes is obtained. This number will be referenced many times.
+	var blob = new Blob([content]);//将文件的主体转换为Blob对象，且会被多次引用。Converts the content of the file to a blob object, which will be referenced many times.
+	var sliced;//用于存储转储后的文件剩余部分。 Used to store the rest of the dumped file.
+	var fr = new FileReader();//创建一个文件阅读器，用于转换base64数据地址。 Create a FileReader for converting Base64 DataURL.
+	fr.onload = function() {//每当数据地址转换完成后。 Every time after the conversion is completed.
+		downloadFunction(this.result.split(',')[1].replace('/','_'), sliced);//文件名通常不允许出现斜线“/”。downloadFunction函数的实现在本文件内的手动下载列表部分。 The slash "/" is usually not allowed in file names. The function downloadFunction is implemented in the manual download list block of this file.
+	}
+	if(document.getElementById('CheckBox3').checked) {//从文件头部转储 Dump from file header
+		sliced = blob.slice(s);//取出剩余部分，不考虑文件类型。Take out the rest without regarding the file type.
+		fr.readAsDataURL(blob.slice(0,s));//取出转储部分，并异步转换为数据地址。 Take out the dump part and convert it to DataURL asynchronously.
+	} else {//从文件尾部转储 Dump from file tail
+		sliced = blob.slice(0,-s);//取出剩余部分，不考虑文件类型。Take out the rest without regarding the file type.
+		fr.readAsDataURL(blob.slice(-s));//取出转储部分，并异步转换为数据地址。 Take out the dump part and convert it to DataURL asynchronously.
+	}
+}
+</script>
+<hr />
+从文件名恢复数据
+<input type="file" style="display:block" onchange="lazyInjectData(this.files[0])" /><!--lazyInjectData函数的实现在下面。The implementation of the function lazyInjectData is below.-->
+<script>
+function lazyInjectData(content) {//懒惰地注入数据（文件主体）
+	var s = parseInt(document.getElementById("DumpSize").value);//根据之前定义的id获取到用户希望的转储字节数。这个数字之后会被多次引用。According to the previously defined ID, the desired number of dump bytes is obtained. This number will be referenced many times.
+	var d = window.atob(content.name.split('.')[0].replace('_','/'));//排除扩展名，还原改变的字符。 Exclude extensions and restore changed characters.
+	s = s > 0 && s <= d.length ? s : d.length;//确定数据字节数。 Determine the number of data bytes.
+	var ba = new Uint8Array(s);//用于存储原本的二进制数据。 Used to store original binary data.
+	while(s--) {ba[s] = d.charCodeAt(s);}//转换成字符串所代表的真正的二进制数据。 Convert to the real binary data represented by the string.
+	var blob;//用于存储最终文件。 Used to store the final file.
+	if(document.getElementById('CheckBox3').checked) {//从文件头部转储 Dump from file header
+		blob = new Blob([ba,content], {type: 'application/octet-stream'});//将数据注入文件头部。 Inject data into the file header.
+	} else {//从文件尾部转储 Dump from file tail
+		blob = new Blob([content,ba], {type: 'application/octet-stream'});//将数据注入文件尾部。 Inject data into the end of the file.
+	}
+	downloadFunction("",blob);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
+}
+</script>
 <hr style="border:1px solid" /><!--针对有偏好传入支持的页面额外添加的偏好链接生成器。 The additional preference link generators are added for pages with preference input support.-->
 <div style="border:1px solid;word-break:break-all"><button type="button" onclick="generatePreferenceLink(this.nextElementSibling,this.nextElementSibling.nextElementSibling,this.nextElementSibling.nextElementSibling.nextElementSibling)">★</button><!--generatePreferenceLink函数的实现在下面。The implementation of the function generatePreferenceLink is below.--><span style="color:grey">点击星星生成偏好链接。 Click the star to generate preference link.</span><span></span><span style="color:Green"></span></div>
 <script>
@@ -220,10 +269,11 @@ function generatePreferenceLink(before, searchString, after) {//生成偏好链�
 		before.innerHTML = currentURL;//所剩内容均为参数之前的字符串。 All that remains is the string before the search string.
 		currentURL = "";//清空缓存字符串。 Clear the cache string.
 	}
-	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1) + (document.getElementById("CheckBox2").checked << 2)).toString()
+	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1) + (document.getElementById("CheckBox2").checked << 2) + (document.getElementById("CheckBox3").checked << 3)).toString()
 		+ (document.getElementById("SizePerFile").value == "1048576" ? "" : "&#38sizePerFile=" + document.getElementById("SizePerFile").value)
 		+ (document.getElementById("MillisecondPerFile").value == "1000" ? "" : "&#38millisecondPerFile=" + document.getElementById("MillisecondPerFile").value)
-		+ (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "");//生成并反馈参数字符串。 Generate and feedback the search string.
+		+ (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "")
+		+ (document.getElementById("DumpSize").value == "9" ? "" : "&#38dumpSize=" + document.getElementById("DumpSize").value);//生成并反馈参数字符串。 Generate and feedback the search string.
 }
 </script>
 </body>
