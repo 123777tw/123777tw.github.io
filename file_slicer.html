@@ -224,11 +224,11 @@ function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主�
 		downloadFunction(this.result.split(',')[1].replace('/\//g','_'), sliced);//文件名通常不允许出现斜线“/”。downloadFunction函数的实现在本文件内的手动下载列表部分。 The slash "/" is usually not allowed in file names. The function downloadFunction is implemented in the manual download list block of this file.
 	}
 	if(document.getElementById('CheckBox3').checked) {//从文件头部转储 Dump from file header
-		sliced = blob.slice(s);//取出剩余部分，不考虑文件类型。Take out the rest without regarding the file type.
-		fr.readAsDataURL(blob.slice(0,s));//取出转储部分，并异步转换为数据地址。 Take out the dump part and convert it to DataURL asynchronously.
+		sliced = blob.slice(s,blob.size,'application/octet-stream');//取出剩余部分，不考虑文件类型。Take out the rest without regarding the file type. //Study #1:第二个参数不可以传入undefined。 The second parameter cannot be passed in undefined.
+		fr.readAsDataURL(blob.slice(0,s,'application/octet-stream'));//取出转储部分，并异步转换为数据地址。 Take out the dump part and convert it to DataURL asynchronously.
 	} else {//从文件尾部转储 Dump from file tail
-		sliced = blob.slice(0,-s);//取出剩余部分，不考虑文件类型。Take out the rest without regarding the file type.
-		fr.readAsDataURL(blob.slice(-s));//取出转储部分，并异步转换为数据地址。 Take out the dump part and convert it to DataURL asynchronously.
+		sliced = blob.slice(0,-s,'application/octet-stream');//取出剩余部分，不考虑文件类型。Take out the rest without regarding the file type.
+		fr.readAsDataURL(blob.slice(-s,blob.size,'application/octet-stream'));//取出转储部分，并异步转换为数据地址。 Take out the dump part and convert it to DataURL asynchronously. //Study #1:第二个参数不可以传入undefined。 The second parameter cannot be passed in undefined.
 	}
 }
 </script>
