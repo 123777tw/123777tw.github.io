@@ -9,45 +9,70 @@ function getPreferences() {//获取偏好（）
 	var searchString = window.location.search.replace("?", "&");//存储地址参数字符串。 Store the search string.
 	if(!searchString) {return;}//如果没有参数字符串立刻返回。 Returned immediately if no search string.
 	var checkPreferenceIndex = searchString.lastIndexOf("&check=");//查找并存储最后一个勾选偏好的位置。 Find and store the index of the last check preference.
-	if(checkPreferenceIndex != -1) {//如果指定了勾选偏好。 If a check preference are specified.
+	if(checkPreferenceIndex != -1) {//如果指定了勾选偏好。 If a check preference is specified.
 		var checkPreferencePreprocessingString = searchString.substring(checkPreferenceIndex);//处理并存储勾选偏好预处理字符串。 Process and store the check preference preprocessing string.
 		var checkPreferenceStringEndIndex = checkPreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储勾选偏好结束位置。 Find and store the check preference end index.
 		var checkPreference = parseInt(checkPreferencePreprocessingString.substring(7, checkPreferenceStringEndIndex ? checkPreferenceStringEndIndex : undefined));//将传入的勾选偏好处理成整数形式并储存。 Process the incoming check preference into integer form and store it.
-		//开始：按照二进制位从低到高设置对应勾选节点。 Start: Set the corresponding checkbox node status from low to high according to the binary bit.
-		document.getElementById("CheckBox0").checked = checkPreference & 1;
-		document.getElementById("CheckBox1").checked = checkPreference >> 1 & 1;
-		document.getElementById("CheckBox2").checked = checkPreference >> 2 & 1;
-		document.getElementById("CheckBox3").checked = checkPreference >> 3 & 1;
-		//结束。 End.
+		for(i = 3; i >= 0; i --) {document.getElementById("CheckBox" + i).checked = checkPreference >> i & 1;}//按照二进制位从低到高设置对应勾选节点。 Set the corresponding checkbox node status from low to high according to the binary bit.
 	}
 	var sizePerFilePreferenceIndex = searchString.lastIndexOf("&sizePerFile=");//查找并存储最后一个每文件字节数偏好的位置。 Find and store the index of the last size per file preference.
-	if(sizePerFilePreferenceIndex != -1) {//如果指定了每文件字节数偏好。 If a size per file preference are specified.
+	if(sizePerFilePreferenceIndex != -1) {//如果指定了每文件字节数偏好。 If a size per file preference is specified.
 		var sizePerFilePreferencePreprocessingString = searchString.substring(sizePerFilePreferenceIndex);//处理并存储每文件字节数偏好预处理字符串。 Process and store the size per file preference preprocessing string.
 		var sizePerFilePreferenceStringEndIndex = sizePerFilePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储每文件字节数偏好结束位置。 Find and store the size per file preference end index.
 		document.getElementById("SizePerFile").value = sizePerFilePreferencePreprocessingString.substring(13, sizePerFilePreferenceStringEndIndex ? sizePerFilePreferenceStringEndIndex : undefined);//将传入的每文件字节数偏好输出到指定输入框。 Output the incoming size per file preference to specified input box.
 	}
 	var parameterPreferenceIndex = searchString.lastIndexOf("&parameter=");//查找并存储最后一个参数列表偏好的位置。 Find and store the index of the last parameter list preference.
-	if(parameterPreferenceIndex != -1) {//如果指定了参数列表偏好。 If a parameter list preference are specified.
+	if(parameterPreferenceIndex != -1) {//如果指定了参数列表偏好。 If a parameter list preference is specified.
 		var parameterPreferencePreprocessingString = searchString.substring(parameterPreferenceIndex);//处理并存储参数列表偏好预处理字符串。 Process and store the parameter list preference preprocessing string.
 		var parameterPreferenceStringEndIndex = parameterPreferencePreprocessingString.indexOf("&");//查找并存储参数列表偏好结束位置。 Find and store the parameter list preference end index.
 		document.getElementById("ParameterList").value = decodeURIComponent(parameterPreferencePreprocessingString.substring(11,parameterPreferenceStringEndIndex ? parameterPreferenceStringEndIndex : undefined));//将传入的参数列表偏好解码并输出到指定文本区域。 Decode the incoming the parameter list preference and output it to specified textarea.
 	}
 	var millisecondPerFilePreferenceIndex = searchString.lastIndexOf("&millisecondPerFile=");//查找并存储最后一个每文件毫秒数偏好的位置。 Find and store the index of the last millisecond per file preference.
-	if(millisecondPerFilePreferenceIndex != -1) {//如果指定了每文件毫秒数偏好。 If a millisecond per file preference are specified.
+	if(millisecondPerFilePreferenceIndex != -1) {//如果指定了每文件毫秒数偏好。 If a millisecond per file preference is specified.
 		var millisecondPerFilePreferencePreprocessingString = searchString.substring(millisecondPerFilePreferenceIndex);//处理并存储每文件毫秒数偏好预处理字符串。 Process and store the millisecond per file preference preprocessing string.
 		var millisecondPerFilePreferenceStringEndIndex = millisecondPerFilePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储每文件毫秒数偏好结束位置。 Find and store the millisecond per file preference end index.
 		document.getElementById("MillisecondPerFile").value = millisecondPerFilePreferencePreprocessingString.substring(20, millisecondPerFilePreferenceStringEndIndex ? millisecondPerFilePreferenceStringEndIndex : undefined);//将传入的每文件毫秒数偏好输出到指定输入框。 Output the incoming millisecond per file preference to specified input box.
 	}
 	var dumpSizePreferenceIndex = searchString.lastIndexOf("&dumpSize=");//查找并存储最后一个转储字节数偏好的位置。 Find and store the index of the last dump size preference.
-	if(dumpSizePreferenceIndex != -1) {//如果指定了转储字节数偏好。 If a dump size preference are specified.
+	if(dumpSizePreferenceIndex != -1) {//如果指定了转储字节数偏好。 If a dump size preference is specified.
 		var dumpSizePreferencePreprocessingString = searchString.substring(dumpSizePreferenceIndex);//处理并存储转储字节数偏好预处理字符串。 Process and store the dump size preference preprocessing string.
 		var dumpSizePreferenceStringEndIndex = dumpSizePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储转储字节数偏好结束位置。 Find and store the dump size preference end index.
 		document.getElementById("DumpSize").value = dumpSizePreferencePreprocessingString.substring(10, dumpSizePreferenceStringEndIndex ? dumpSizePreferenceStringEndIndex : undefined);//将传入的转储字节数偏好输出到指定输入框。 Output the incoming dump size preference to specified input box.
 	}
+	var layoutPreferenceIndex = searchString.lastIndexOf("&layout=");//查找并存储最后一个布局偏好的位置。 Find and store the index of the last layout preference.
+	if(layoutPreferenceIndex != -1) {//如果指定了布局偏好。 If a layout preference is specified.
+		var layoutPreferencePreprocessingString = searchString.substring(layoutPreferenceIndex);//处理并存储布局偏好预处理字符串。 Process and store the layout preference preprocessing string.
+		var layoutPreferenceStringEndIndex = layoutPreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储布局偏好结束位置。 Find and store the layout preference end index.
+		var layoutPreference = parseInt(layoutPreferencePreprocessingString.substring(8, layoutPreferenceStringEndIndex ? layoutPreferenceStringEndIndex : undefined));//将传入的布局偏好处理成整数形式并储存。 Process the incoming layout preference into integer form and store it.
+		if(layoutPreference == -1){//懒人工具附带。 Lazy tool comes with.
+			var CN = document.createElement("style");//创建样式节点。 Create a style node.
+			CN.innerHTML = "hr,div{display:none;}";//隐藏所有划分节点和水平分割线节点。 Hides all div nodes and hr nodes.
+			document.head.appendChild(CN);//插入到头部节点。 Insert into the head node.
+			var D = document.createElement("div");//用于构建附带页面。 Used to build attached pages.
+			D.style.display = "block";//不跟随其他布局节点隐藏。 Do not hide with other layout nodes.
+			document.body.appendChild(D);//插入到主体节点。 Insert into the body node.
+			var FN;//用于存储链接中备份的文件名。 Used to store the file name that backed-up in the link.
+			var fileNamePreferenceIndex = searchString.lastIndexOf("&fileName=");//查找并存储最后一个文件名偏好的位置。 Find and store the index of the last file name preference.
+			if(fileNamePreferenceIndex != -1) {//如果指定了文件名偏好。 If a file name preference is specified.
+				var fileNamePreferencePreprocessingString = searchString.substring(fileNamePreferenceIndex);//处理并存储文件名偏好预处理字符串。 Process and store the file name preference preprocessing string.
+				var fileNamePreferenceStringEndIndex = fileNamePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储文件名偏好结束位置。 Find and store the file name preference end index.
+				FN = fileNamePreferencePreprocessingString.substring(10, sizePerFilePreferenceStringEndIndex ? sizePerFilePreferenceStringEndIndex : undefined);//获取传入的文件名偏好。 Get the incoming file name preference.
+			} else {//没有指定文件名偏好。 No file name preference specified.
+				D.innerHTML = "懒人工具数据恢复备用链接 Lazy tool data recovery alternate link<br />没有指定文件名，链接正确吗？ The file name is not specified. Is the link correct?";//插入错误提醒。 Insert an error reminder.
+				return;
+			}
+			D.innerHTML = "懒人工具数据恢复备用链接 Lazy tool data recovery alternate link<br />将使用 Use<br />"+FN+"<br />代替文件名。 instead of the actual filename.";//插入确认提示。 Insert a confirmation prompt.
+			if(document.getElementById('CheckBox3').checked) {D.innerHTML += "<br />向文件头部而不是尾部恢复数据。 Restore data to file header instead of tail.";}//恢复位置确认提示。 Restore location confirmation prompt.
+			D.innerHTML += '<input type="file" style="display:block" onchange="lazyInjectData(this.files[0], \'' + FN + '\')" />';//用于接受文件。 Used to accept files.
+			return;
+		}
+		for(i = 5; i >= 0; i --) {if(layoutPreference >> i & 1) {document.getElementById("Block" + i).style.display = "none";}}//按照二进制位从低到高设置对应划分节点。 Set the corresponding div node status from low to high according to the binary bit.
+	}
 }
 </script>
 </head>
-<body onload="getPreferences();"><!--getPreference函数的实现在头部标签内。 The implementation of the function sliceAndDownloadFiles is in head tag.-->
+<body onload="getPreferences();" style="text-shadow:1px 1px 1px white"><!--getPreference函数的实现在头部标签内。 The implementation of the function sliceAndDownloadFiles is in head tag.-->
+<div id="Block0"><!--以“Block”起始的id用于布局定制功能的引用。下同。 The ids starting with "Block" is used for reference of layout customization function. The same below.-->
 <label><input type="text" id="SizePerFile" value="1048576" /><!--节点id会在sliceAndDownloadFiles函数实现中和偏好设置中被引用（在本文件内）。1048576=1M The node id will be referenced in the function sliceAndDownloadFiles implementation and the preference settings (in this file).-->字节每文件 Bytes per file</label>
 <input type="file" style="display:block" onchange="sliceAndDownloadFiles('s',this.files[0])" /><!--sliceAndDownloadFiles函数的实现在下面。The implementation of the function sliceAndDownloadFiles is below.-->
 <script>
@@ -62,7 +87,9 @@ function sliceAndDownloadFiles(fileName, content) {//拆分并且下载文件（
 	}
 }
 </script>
+</div>
 <hr /><!--下面是附加的合并文件功能，用于还原被拆分的文件。The following is an additional merge file function for restoring split files.-->
+<div id="Block1">
 将它们合并回去 Merge them back
 <label style="display:block"><input id="CheckBox0" type="checkbox" checked /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->生成高级文件拆分参数列表<div style="display:inline-block;margin-left:20px">Generate advanced file splitting parameter list</div></label>
 <input type="file" style="display:block" multiple onchange="mergeAndDownloadFile('merged', this.files);if(document.getElementById('CheckBox0').checked){generateParameterList(this.files,document.getElementById('ParameterList'),document.getElementById('CheckBox1').checked);}" /><!--mergeAndDownloadFile和generateParameterList函数的实现在下面。 The implementation of the function mergeAndDownloadFile and generateParameterList are below.-->
@@ -88,7 +115,9 @@ function generateParameterList(contents, output, checked1) {//生成参数列表
 	output.value = filenames + "\n" + parameterList.substring(1);//输出到文本区域。其中参数列表要去除最开始多余的逗号。 Output to the textarea. Notice that the redundant comma at the beginning of the parameter list is removed.
 }
 </script>
+</div>
 <hr /><!--下面的高级文件拆分功能是根据Blob.slice函数的功能特点设计的。The following advanced file splitting function is designed based on Blob.slice Function of the functional characteristics.-->
+<div id="Block2">
 高级文件拆分参数列表 Advanced file splitting parameter list
 <label style="display:block"><input id="CheckBox1" type="checkbox" checked onclick="changeTips(this.checked, document.getElementById('ParameterList'))"/><!--所有勾选节点id在本文件内将会被多次引用。changeTips函数的实现在下面。 All checkbox node IDs will be referenced many times in this file. The implementation of the function changeTips is below.-->使用“application/octet-stream”作为文档类型的默认值<div style="display:inline-block;margin-left:20px">Use "application/octet-stream" as the default for contentType</div></label>
 <textarea id="ParameterList" style="display:block;width:90%" rows=5 placeholder="star~end,star~end...&#10;起始字节~结束字节,起始字节~结束字节……"></textarea><!--节点id会在本文件内将会被多次引用。 The node ID will be referenced many times in this file.-->
@@ -143,7 +172,9 @@ function advancedSliceAndDownloadFiles(forceFileNames, contents, parameterLists,
 	}
 }
 </script>
+</div>
 <hr style="border:1px solid" /><!--避免造成大量并发下载的手动下载列表。 Add manual download list to avoid a large number of concurrent downloads.-->
+<div id="Block3">
 <label style="display:block"><input id="CheckBox2" type="checkbox" /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->生成手动下载列表<div style="display:inline-block;margin-left:20px">Generate manual download list</div></label>
 <ol></ol>
 <button type="button" onclick="downloadAll1by1(this.previousElementSibling.children, this.nextElementSibling.firstElementChild.value)" style="text-decoration:underline">↓</button><label><input type="text" id="MillisecondPerFile" value="1000" />毫秒每文件 Millisecond per file</label><!--间歇下载所有文件。downloadAll1by1函数的实现在下方。id被偏好设置引用。 Download all files intermittently. The implementation of the downloadAll1by1 function is below. Id is referenced by preference settings.-->
@@ -203,13 +234,15 @@ function deleteLiTag(blobURL, liNode) {//删除li标签（二进制链接串，l
 function downloadAll1by1(olNodeChildren, interval) {//一个一个下载（序列节点，间隔）
 	var i = olNodeChildren.length;//获取列表项计数。 Gets the count of list items.
 	var id = setInterval(function(){//创建间歇循环任务，并记录任务id。 Create an intermittent cycle task and record the task ID.
-		if(i == 0) {clearInterval(id);return;}//如果没有剩余下载项，终止循环任务并退出函数。 If there are no downloads left, terminate the loop task and exit the function.
+		if(i == 0) {clearInterval(id);return;}//如果没有剩余下载项，终止循环任务并退出函数。 If there is no downloads left, terminate the loop task and exit the function.
 		olNodeChildren[i-1].firstElementChild.click();//模拟点击剩余项中的最后一项触发下载。 Simulate clicking the last of the remaining items to trigger the download.
 		i--;//将剩余项向前收缩一项。 Shrink the remaining items forward by one item.
 	}, interval);//传入间歇时间。 Afferent the interval time.
 }
 </script>
+</div>
 <hr style="border:1px solid" /><!--下面是一个附加的懒人工具。 The following is an additional lazy tool.-->
+<div id="Block4">
 转储数据到文件名懒人工具 Dump data to filename lazy tool
 <label style="display:block">转储 Dump<input type="text" id="DumpSize" value="9" /><!--节点id会在lazyDump2Filename函数实现中和偏好设置中被引用（在本文件内）。 The node id will be referenced in the function lazyDump2Filename implementation and the preference settings (in this file).-->字节 bytes</label>
 <label style="display:block"><input id="CheckBox3" type="checkbox" /><!--所有勾选节点id在本文件内将会被多次引用。 All checkbox node IDs will be referenced many times in this file.-->从文件头部而不是尾部转储数据<div style="display:inline-block;margin-left:20px">Dump data from file header instead of tail</div></label>
@@ -232,13 +265,15 @@ function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主�
 	}
 }
 </script>
+</div>
 <hr />
+<div id="Block5">
 从文件名恢复数据
 <input type="file" style="display:block" onchange="lazyInjectData(this.files[0])" /><!--lazyInjectData函数的实现在下面。The implementation of the function lazyInjectData is below.-->
 <script>
-function lazyInjectData(content) {//懒惰地注入数据（文件主体）
+function lazyInjectData(content, fileName) {//懒惰地注入数据（文件主体，文件名）
 	var s = parseInt(document.getElementById("DumpSize").value);//根据之前定义的id获取到用户希望的转储字节数。这个数字之后会被多次引用。According to the previously defined ID, the desired number of dump bytes is obtained. This number will be referenced many times.
-	var d = window.atob(content.name.split('.')[0].replace('/_/g','/'));//排除扩展名，还原改变的字符。 Exclude extensions and restore changed characters.
+	var d = window.atob((fileName ? fileName : content.name).split('.')[0].replace('/_/g','/'));//排除扩展名，还原改变的字符。 Exclude extensions and restore changed characters.
 	s = s > 0 && s <= d.length ? s : d.length;//确定数据字节数。 Determine the number of data bytes.
 	var ba = new Uint8Array(s);//用于存储原本的二进制数据。 Used to store original binary data.
 	while(s--) {ba[s] = d.charCodeAt(s);}//转换成字符串所代表的真正的二进制数据。 Convert to the real binary data represented by the string.
@@ -248,11 +283,12 @@ function lazyInjectData(content) {//懒惰地注入数据（文件主体）
 	} else {//从文件尾部转储 Dump from file tail
 		blob = new Blob([content,ba], {type: 'application/octet-stream'});//将数据注入文件尾部。 Inject data into the end of the file.
 	}
-	downloadFunction("",blob);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
+	downloadFunction(content.name,blob);//函数的实现在本文件内的手动下载列表部分。 The function is implemented in the manual download list block of this file.
 }
 </script>
+</div>
 <hr style="border:1px solid" /><!--针对有偏好传入支持的页面额外添加的偏好链接生成器。 The additional preference link generators are added for pages with preference input support.-->
-<div style="border:1px solid;word-break:break-all"><button type="button" onclick="generatePreferenceLink(this.nextElementSibling,this.nextElementSibling.nextElementSibling,this.nextElementSibling.nextElementSibling.nextElementSibling)">★</button><!--generatePreferenceLink函数的实现在下面。The implementation of the function generatePreferenceLink is below.--><span style="color:grey">点击星星生成偏好链接。 Click the star to generate preference link.</span><span></span><span style="color:Green"></span></div>
+<div id="Block_preference" style="border:1px solid;word-break:break-all"><button type="button" onclick="generatePreferenceLink(this.nextElementSibling,this.nextElementSibling.nextElementSibling,this.nextElementSibling.nextElementSibling.nextElementSibling)">★</button><!--generatePreferenceLink函数的实现在下面。The implementation of the function generatePreferenceLink is below.--><span style="color:grey">点击星星生成偏好链接。 Click the star to generate preference link.</span><span></span><span style="color:Green"></span></div>
 <script>
 function generatePreferenceLink(before, searchString, after) {//生成偏好链接（之前，参数字符串，之后）
 	var currentURL = window.location.href;//缓存当前页面完整的URL字符串，用于获取其中的参数之前的字符串和锚点字符串。请注意，仍然有少数浏览器不支持window.loaction.origin。 Cache the complete URL string of the current page, which is used to obtain the string before the search string and the hash string. Note that there are still a few browsers that don't support window.loaction.origin .
@@ -269,7 +305,9 @@ function generatePreferenceLink(before, searchString, after) {//生成偏好链�
 		before.innerHTML = currentURL;//所剩内容均为参数之前的字符串。 All that remains is the string before the search string.
 		currentURL = "";//清空缓存字符串。 Clear the cache string.
 	}
-	searchString.innerHTML = "?check=" + (document.getElementById("CheckBox0").checked + (document.getElementById("CheckBox1").checked << 1) + (document.getElementById("CheckBox2").checked << 2) + (document.getElementById("CheckBox3").checked << 3)).toString()
+	var checkValue = 0;//用于存储勾选偏好的参数值。 Used to store the search value of the checked preference.
+	for(i = 3; i >= 0; i --) {checkValue += document.getElementById("CheckBox" + i).checked << i}//生成勾选偏好的参数值。 Generate the search value of the checked preference.
+	searchString.innerHTML = "?check=" + checkValue.toString()
 		+ (document.getElementById("SizePerFile").value == "1048576" ? "" : "&#38sizePerFile=" + document.getElementById("SizePerFile").value)
 		+ (document.getElementById("MillisecondPerFile").value == "1000" ? "" : "&#38millisecondPerFile=" + document.getElementById("MillisecondPerFile").value)
 		+ (document.getElementById("ParameterList").value.length ? ("&#38parameter=" + encodeURIComponent(document.getElementById("ParameterList").value)) : "")
