@@ -6,67 +6,54 @@
 <!--这是一个在内存操作文件的工具，请注意内存占用。 This is a tool for operating files in memory. Please pay attention to memory usage.-->
 <script>
 function getPreferences() {//获取偏好（）
-	var searchString = window.location.search.replace("?", "&");//存储地址参数字符串。 Store the search string.
+	const searchString = window.location.search.replace("?", "&");//存储地址参数字符串。 Store the search string.
 	if(!searchString) {return;}//如果没有参数字符串立刻返回。 Returned immediately if no search string.
-	var checkPreferenceIndex = searchString.lastIndexOf("&check=");//查找并存储最后一个勾选偏好的位置。 Find and store the index of the last check preference.
-	if(checkPreferenceIndex != -1) {//如果指定了勾选偏好。 If a check preference is specified.
-		var checkPreferencePreprocessingString = searchString.substring(checkPreferenceIndex);//处理并存储勾选偏好预处理字符串。 Process and store the check preference preprocessing string.
-		var checkPreferenceStringEndIndex = checkPreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储勾选偏好结束位置。 Find and store the check preference end index.
-		var checkPreference = parseInt(checkPreferencePreprocessingString.substring(7, checkPreferenceStringEndIndex ? checkPreferenceStringEndIndex : undefined));//将传入的勾选偏好处理成整数形式并储存。 Process the incoming check preference into integer form and store it.
-		for(i = 3; i >= 0; i --) {document.getElementById("CheckBox" + i).checked = checkPreference >> i & 1;}//按照二进制位从低到高设置对应勾选节点。 Set the corresponding checkbox node status from low to high according to the binary bit.
+	function getPreferenceValue(preferenceName) {//获取指定偏好值（偏好名）
+		const getPreferenceIndex = searchString.lastIndexOf("&" + preferenceName + "=");//查找并存储最后一个指定偏好的位置。 Find and store the index of the last specified preference.
+		if(getPreferenceIndex == -1) {return false;}//如果没有找到指定偏好返回假。 Returns false if the specified preference is not found.
+		const getPreferenceStringEndOffset = searchString.substring(getPreferenceIndex + 1).indexOf("&") + 1;//查找并存储指定偏好结束偏移。 Find and store the specified preference end offset.
+		return searchString.substring(getPreferenceIndex + preferenceName.length + 2, getPreferenceStringEndOffset ? getPreferenceIndex + getPreferenceStringEndOffset : undefined);//返回指定偏好的值。 Returns the value of the specified preference.
 	}
-	var sizePerFilePreferenceIndex = searchString.lastIndexOf("&sizePerFile=");//查找并存储最后一个每文件字节数偏好的位置。 Find and store the index of the last size per file preference.
-	if(sizePerFilePreferenceIndex != -1) {//如果指定了每文件字节数偏好。 If a size per file preference is specified.
-		var sizePerFilePreferencePreprocessingString = searchString.substring(sizePerFilePreferenceIndex);//处理并存储每文件字节数偏好预处理字符串。 Process and store the size per file preference preprocessing string.
-		var sizePerFilePreferenceStringEndIndex = sizePerFilePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储每文件字节数偏好结束位置。 Find and store the size per file preference end index.
-		document.getElementById("SizePerFile").value = sizePerFilePreferencePreprocessingString.substring(13, sizePerFilePreferenceStringEndIndex ? sizePerFilePreferenceStringEndIndex : undefined);//将传入的每文件字节数偏好输出到指定输入框。 Output the incoming size per file preference to specified input box.
+	const checkPreferenceValue = parseInt(getPreferenceValue("check"));//获取勾选偏好。 Get the check preference.
+	if(!isNaN(checkPreferenceValue)) {//如果指定了合法的勾选偏好。 If a legal check preference is specified.
+		for(i = 3; i >= 0; i --) {document.getElementById("CheckBox" + i).checked = checkPreferenceValue >> i & 1;}//按照二进制位从低到高设置对应勾选节点。 Set the corresponding checkbox node status from low to high according to the binary bit.
 	}
-	var parameterPreferenceIndex = searchString.lastIndexOf("&parameter=");//查找并存储最后一个参数列表偏好的位置。 Find and store the index of the last parameter list preference.
-	if(parameterPreferenceIndex != -1) {//如果指定了参数列表偏好。 If a parameter list preference is specified.
-		var parameterPreferencePreprocessingString = searchString.substring(parameterPreferenceIndex);//处理并存储参数列表偏好预处理字符串。 Process and store the parameter list preference preprocessing string.
-		var parameterPreferenceStringEndIndex = parameterPreferencePreprocessingString.indexOf("&");//查找并存储参数列表偏好结束位置。 Find and store the parameter list preference end index.
-		document.getElementById("ParameterList").value = decodeURIComponent(parameterPreferencePreprocessingString.substring(11,parameterPreferenceStringEndIndex ? parameterPreferenceStringEndIndex : undefined));//将传入的参数列表偏好解码并输出到指定文本区域。 Decode the incoming the parameter list preference and output it to specified textarea.
+	const sizePerFilePreferenceText = getPreferenceValue("sizePerFile");//获取每文件字节数偏好。 Get the size per file preference.
+	if(sizePerFilePreferenceText !== false) {//如果指定了每文件字节数偏好。 If a size per file preference is specified.
+		document.getElementById("SizePerFile").value = sizePerFilePreferenceText;//将传入的每文件字节数偏好输出到指定输入框。 Output the incoming size per file preference to specified input box.
 	}
-	var millisecondPerFilePreferenceIndex = searchString.lastIndexOf("&millisecondPerFile=");//查找并存储最后一个每文件毫秒数偏好的位置。 Find and store the index of the last millisecond per file preference.
-	if(millisecondPerFilePreferenceIndex != -1) {//如果指定了每文件毫秒数偏好。 If a millisecond per file preference is specified.
-		var millisecondPerFilePreferencePreprocessingString = searchString.substring(millisecondPerFilePreferenceIndex);//处理并存储每文件毫秒数偏好预处理字符串。 Process and store the millisecond per file preference preprocessing string.
-		var millisecondPerFilePreferenceStringEndIndex = millisecondPerFilePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储每文件毫秒数偏好结束位置。 Find and store the millisecond per file preference end index.
-		document.getElementById("MillisecondPerFile").value = millisecondPerFilePreferencePreprocessingString.substring(20, millisecondPerFilePreferenceStringEndIndex ? millisecondPerFilePreferenceStringEndIndex : undefined);//将传入的每文件毫秒数偏好输出到指定输入框。 Output the incoming millisecond per file preference to specified input box.
+	const parameterPreferenceText = getPreferenceValue("parameter");//获取参数列表偏好。 Get the parameter list preference.
+	if(parameterPreferenceText !== false) {//如果指定了参数列表偏好。 If a parameter list preference is specified.
+		document.getElementById("ParameterList").value = decodeURIComponent(parameterPreferenceText);//将传入的参数列表偏好解码并输出到指定文本区域。 Decode the incoming the parameter list preference and output it to specified textarea.
 	}
-	var dumpSizePreferenceIndex = searchString.lastIndexOf("&dumpSize=");//查找并存储最后一个转储字节数偏好的位置。 Find and store the index of the last dump size preference.
-	if(dumpSizePreferenceIndex != -1) {//如果指定了转储字节数偏好。 If a dump size preference is specified.
-		var dumpSizePreferencePreprocessingString = searchString.substring(dumpSizePreferenceIndex);//处理并存储转储字节数偏好预处理字符串。 Process and store the dump size preference preprocessing string.
-		var dumpSizePreferenceStringEndIndex = dumpSizePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储转储字节数偏好结束位置。 Find and store the dump size preference end index.
-		document.getElementById("DumpSize").value = dumpSizePreferencePreprocessingString.substring(10, dumpSizePreferenceStringEndIndex ? dumpSizePreferenceStringEndIndex : undefined);//将传入的转储字节数偏好输出到指定输入框。 Output the incoming dump size preference to specified input box.
+	const millisecondPerFilePreferenceText = getPreferenceValue("millisecondPerFile");//获取每文件毫秒数偏好。 Get the millisecond per file preference.
+	if(millisecondPerFilePreferenceText !== false) {//如果指定了每文件毫秒数偏好。 If a millisecond per file preference is specified.
+		document.getElementById("MillisecondPerFile").value = millisecondPerFilePreferenceText;//将传入的每文件毫秒数偏好输出到指定输入框。 Output the incoming millisecond per file preference to specified input box.
 	}
-	var layoutPreferenceIndex = searchString.lastIndexOf("&layout=");//查找并存储最后一个布局偏好的位置。 Find and store the index of the last layout preference.
-	if(layoutPreferenceIndex != -1) {//如果指定了布局偏好。 If a layout preference is specified.
-		var layoutPreferencePreprocessingString = searchString.substring(layoutPreferenceIndex);//处理并存储布局偏好预处理字符串。 Process and store the layout preference preprocessing string.
-		var layoutPreferenceStringEndIndex = layoutPreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储布局偏好结束位置。 Find and store the layout preference end index.
-		var layoutPreference = parseInt(layoutPreferencePreprocessingString.substring(8, layoutPreferenceStringEndIndex ? layoutPreferenceStringEndIndex : undefined));//将传入的布局偏好处理成整数形式并储存。 Process the incoming layout preference into integer form and store it.
-		if(layoutPreference == -1){//懒人工具附带。 Lazy tool comes with.
+	const dumpSizePreferenceText = getPreferenceValue("dumpSize");//获取转储字节数偏好。 Get the dump size preference.
+	if(dumpSizePreferenceText !== false) {//如果指定了转储字节数偏好。 If a dump size preference is specified.
+		document.getElementById("DumpSize").value = dumpSizePreferenceText;//将传入的转储字节数偏好输出到指定输入框。 Output the incoming dump size preference to specified input box.
+	}
+	const layoutPreferenceValue = parseInt(getPreferenceValue("layout"));//获取布局偏好。 Get the layout preference.
+	if(!isNaN(layoutPreferenceValue)) {//如果指定了合法的布局偏好。 If a legal layout preference is specified.
+		if(layoutPreferenceValue == -1){//懒人工具附带。 Lazy tool comes with.
 			var CN = document.createElement("style");//创建样式节点。 Create a style node.
 			CN.innerHTML = "hr,div{display:none;}";//隐藏所有划分节点和水平分割线节点。 Hides all div nodes and hr nodes.
 			document.head.appendChild(CN);//插入到头部节点。 Insert into the head node.
 			var D = document.createElement("div");//用于构建附带页面。 Used to build attached pages.
 			D.style.display = "block";//不跟随其他布局节点隐藏。 Do not hide with other layout nodes.
 			document.body.appendChild(D);//插入到主体节点。 Insert into the body node.
-			var FN;//用于存储链接中备份的文件名。 Used to store the file name that backed-up in the link.
-			var fileNamePreferenceIndex = searchString.lastIndexOf("&fileName=");//查找并存储最后一个文件名偏好的位置。 Find and store the index of the last file name preference.
-			if(fileNamePreferenceIndex != -1) {//如果指定了文件名偏好。 If a file name preference is specified.
-				var fileNamePreferencePreprocessingString = searchString.substring(fileNamePreferenceIndex);//处理并存储文件名偏好预处理字符串。 Process and store the file name preference preprocessing string.
-				var fileNamePreferenceStringEndIndex = fileNamePreferencePreprocessingString.substring(1).indexOf("&") + 1;//查找并存储文件名偏好结束位置。 Find and store the file name preference end index.
-				FN = fileNamePreferencePreprocessingString.substring(10, sizePerFilePreferenceStringEndIndex ? sizePerFilePreferenceStringEndIndex : undefined);//获取传入的文件名偏好。 Get the incoming file name preference.
-			} else {//没有指定文件名偏好。 No file name preference specified.
+			const fileNamePreferenceText = getPreferenceValue("fileName");//获取文件名偏好。 Get the file name preference.
+			if(fileNamePreferenceText === false) {//如果没有指定文件名偏好。 If no file name preference is specified.
 				D.innerHTML = "懒人工具数据恢复备用链接 Lazy tool data recovery alternate link<br />没有指定文件名，链接正确吗？ The file name is not specified. Is the link correct?";//插入错误提醒。 Insert an error reminder.
-				return;
+				return;//偏好获取结束。 End of preference acquisition.
 			}
-			D.innerHTML = "懒人工具数据恢复备用链接 Lazy tool data recovery alternate link<br />将使用 Use<br />"+FN+"<br />代替文件名。 instead of the actual filename.";//插入确认提示。 Insert a confirmation prompt.
+			D.innerHTML = "懒人工具数据恢复备用链接 Lazy tool data recovery alternate link<br />将使用 Use<br />" + fileNamePreferenceText + "<br />代替文件名。 instead of the actual filename.";//插入确认提示。 Insert a confirmation prompt.
 			if(document.getElementById('CheckBox3').checked) {D.innerHTML += "<br />向文件头部而不是尾部恢复数据。 Restore data to file header instead of tail.";}//恢复位置确认提示。 Restore location confirmation prompt.
-			D.innerHTML += '<input type="file" style="display:block" onchange="lazyInjectData(this.files[0], \'' + FN + '\')" />';//用于接受文件。 Used to accept files.
-			return;
+			D.innerHTML += '<input type="file" style="display:block" onchange="lazyInjectData(this.files[0], \'' + fileNamePreferenceText + '\')" />';//用于接受文件。 Used to accept files.
+			return;//偏好获取结束。 End of preference acquisition.
 		}
-		for(i = 5; i >= 0; i --) {if(layoutPreference >> i & 1) {document.getElementById("Block" + i).style.display = "none";}}//按照二进制位从低到高设置对应划分节点。 Set the corresponding div node status from low to high according to the binary bit.
+		for(i = 5; i >= 0; i --) {if(layoutPreferenceValue >> i & 1) {document.getElementById("Block" + i).style.display = "none";}}//按照二进制位从低到高设置对应划分节点。 Set the corresponding div node status from low to high according to the binary bit.
 	}
 }
 </script>
