@@ -241,7 +241,7 @@ function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主�
 	var sliced;//用于存储转储后的文件剩余部分。 Used to store the rest of the dumped file.
 	var fr = new FileReader();//创建一个文件阅读器，用于转换base64数据地址。 Create a FileReader for converting Base64 DataURL.
 	fr.onload = function() {//每当数据地址转换完成后。 Every time after the conversion is completed.
-		var fileName = this.result.split(',')[1].replace('/\//g','_');//文件名通常不允许出现斜线“/”。 The slash "/" is usually not allowed in file names.
+		var fileName = this.result.split(',')[1].replace(/\//g,'_');//文件名通常不允许出现斜线“/”。 The slash "/" is usually not allowed in file names.
 		downloadFunction(fileName, sliced);//downloadFunction函数的实现在本文件内的手动下载列表部分。 The function downloadFunction is implemented in the manual download list block of this file.
 		var BP = document.getElementById("Block_preference");//获取偏好链接栏以展示备用恢复链接。 Get the preference link bar to show the alternate recovery link.
 		generatePreferenceLink(BP.children[1],BP.children[2],BP.children[3]);//模拟生成当前的偏好链接。 Simulate the generation of the current preference link.
@@ -265,7 +265,7 @@ function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主�
 <script>
 function lazyInjectData(content, fileName) {//懒惰地注入数据（文件主体，文件名）
 	var s = parseInt(document.getElementById("DumpSize").value);//根据之前定义的id获取到用户希望的转储字节数。这个数字之后会被多次引用。According to the previously defined ID, the desired number of dump bytes is obtained. This number will be referenced many times.
-	var d = window.atob((fileName ? fileName : content.name).split('.')[0].replace('/_/g','/'));//排除扩展名，还原改变的字符。 Exclude extensions and restore changed characters.
+	var d = window.atob((fileName ? fileName : content.name).split('.')[0].replace(/_/g,'/'));//排除扩展名，还原改变的字符。 Exclude extensions and restore changed characters.
 	s = s > 0 && s <= d.length ? s : d.length;//确定数据字节数。 Determine the number of data bytes.
 	var ba = new Uint8Array(s);//用于存储原本的二进制数据。 Used to store original binary data.
 	while(s--) {ba[s] = d.charCodeAt(s);}//转换成字符串所代表的真正的二进制数据。 Convert to the real binary data represented by the string.
