@@ -241,9 +241,14 @@ function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主�
 	var sliced;//用于存储转储后的文件剩余部分。 Used to store the rest of the dumped file.
 	var fr = new FileReader();//创建一个文件阅读器，用于转换base64数据地址。 Create a FileReader for converting Base64 DataURL.
 	fr.onload = function() {//每当数据地址转换完成后。 Every time after the conversion is completed.
-		downloadFunction(this.result.split(',')[1].replace('/\//g','_'), sliced);//文件名通常不允许出现斜线“/”。downloadFunction函数的实现在本文件内的手动下载列表部分。 The slash "/" is usually not allowed in file names. The function downloadFunction is implemented in the manual download list block of this file.
+		var fileName = this.result.split(',')[1].replace('/\//g','_');//文件名通常不允许出现斜线“/”。 The slash "/" is usually not allowed in file names.
+		downloadFunction(fileName, sliced);//downloadFunction函数的实现在本文件内的手动下载列表部分。 The function downloadFunction is implemented in the manual download list block of this file.
+		var BP = document.getElementById("Block_preference");//获取偏好链接栏以展示备用恢复链接。 Get the preference link bar to show the alternate recovery link.
+		generatePreferenceLink(BP.children[1],BP.children[2],BP.children[3]);//模拟生成当前的偏好链接。 Simulate the generation of the current preference link.
+		BP.children[2].innerHTML += "&layout=-1&fileName=" + fileName;//追加懒人工具特有的参数。 Append the parameters unique to the lazy tool.
 	}
 	if(document.getElementById('CheckBox3').checked) {//从文件头部转储 Dump from file header
+		if(isNaN(s)) {s = blob.size;}//如果未指定有效的转储字节数，则认为全文件转储。 If a valid number of dump bytes is not specified, a full file dump is considered.  //Study #1: 不可以设置为undefined。 It cannot be set to undefined.
 		sliced = blob.slice(s,blob.size,'application/octet-stream');//取出剩余部分，不考虑文件类型。Take out the rest without regarding the file type. //Study #1:第二个参数不可以传入undefined。 The second parameter cannot be passed in undefined.
 		fr.readAsDataURL(blob.slice(0,s,'application/octet-stream'));//取出转储部分，并异步转换为数据地址。 Take out the dump part and convert it to DataURL asynchronously.
 	} else {//从文件尾部转储 Dump from file tail
@@ -255,7 +260,7 @@ function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主�
 </div>
 <hr />
 <div id="Block5">
-从文件名恢复数据
+从文件名恢复数据 Grab data from file name
 <input type="file" style="display:block" onchange="lazyInjectData(this.files[0])" /><!--lazyInjectData函数的实现在下面。The implementation of the function lazyInjectData is below.-->
 <script>
 function lazyInjectData(content, fileName) {//懒惰地注入数据（文件主体，文件名）
@@ -278,17 +283,17 @@ function lazyInjectData(content, fileName) {//懒惰地注入数据（文件主�
 <div id="Block_preference" style="border:1px solid;word-break:break-all"><button type="button" onclick="generatePreferenceLink(this.nextElementSibling,this.nextElementSibling.nextElementSibling,this.nextElementSibling.nextElementSibling.nextElementSibling)">★</button><!--generatePreferenceLink函数的实现在下面。The implementation of the function generatePreferenceLink is below.--><span style="color:grey">点击星星生成偏好链接。 Click the star to generate preference link.</span><span></span><span style="color:Green"></span></div>
 <script>
 function generatePreferenceLink(before, searchString, after) {//生成偏好链接（之前，参数字符串，之后）
-	var currentURL = window.location.href;//缓存当前页面完整的URL字符串，用于获取其中的参数之前的字符串和锚点字符串。请注意，仍然有少数浏览器不支持window.loaction.origin。 Cache the complete URL string of the current page, which is used to obtain the string before the search string and the hash string. Note that there are still a few browsers that don't support window.loaction.origin .
+	var currentURL = window.location.href;//缓存当前页面完整的URL字符串，用于获取其中的参数之前的字符串和锚点字符串。请注意，仍然有少数浏览器不支持window.location.origin。 Cache the complete URL string of the current page, which is used to obtain the string before the search string and the hash string. Note that there are still a few browsers that don't support window.location.origin .
 	var afterIndex = currentURL.indexOf("#");//获取锚点字符串的起始位置。 Get the starting position of the hash string.
 	if (afterIndex > -1) {//如果存在锚点字符串。 If the hash string exists.
 		after.innerHTML = currentURL.substring(afterIndex);//取出锚点字符串。 Obtain the hash string.
 		currentURL = currentURL.substring(0,afterIndex);//移除锚点字符串。 Remove the hash string.
 	}
 	var beforeIndex = currentURL.indexOf("?");//获取参数字符串的起始位置。 Get the starting position of the search string.
-	if (beforeIndex > -1) {//如果存在锚点字符串。 If the search string exists.
+	if (beforeIndex > -1) {//如果存在参数字符串。 If the search string exists.
 		before.innerHTML = currentURL.substring(0,beforeIndex);//取出参数之前的字符串。 Obtain the string before the search string.
 		currentURL = currentURL.substring(beforeIndex);//移除参数之前字符串。 Remove the string before the search string.
-	} else {//如果不存在锚点字符串。 If the search string doesn't exist.
+	} else {//如果不存在参数字符串。 If the search string doesn't exist.
 		before.innerHTML = currentURL;//所剩内容均为参数之前的字符串。 All that remains is the string before the search string.
 		currentURL = "";//清空缓存字符串。 Clear the cache string.
 	}
