@@ -174,7 +174,7 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 		_clean();//=> bodyLoaded()
 		d = G.equips.shapes[G.equips.current].drop(event.offsetX,event.offsetY);//调用当前绘画工具的个性化步骤以获得适当的节点。 Call the personalization step of the current equip to get the appropriate node.
 		G._needClean = (G.equips.shapes[G.equips.current].s == 0);//根据步骤标记判断产生的新笔划是否需要清理。 Judge whether the generated new stroke need to be cleaned up according to the step mark.
-		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/"/g,'').replace(/,/g,';').replace(/_/g,'-');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
+		if(Object.getOwnPropertyNames(ds).length > 0){d.style.cssText = JSON.stringify(ds).slice(1,-1).replace(/","/g,';').replace(/"/g,'').replace(/_/g,'-');}//为笔画附加可能存在的额外样式设置。 Add the additional style settings of the stroke if exist.
 		s.appendChild(d);//绘入。 Draw in.
 	}
 	function firstDrop(event){//首次落笔。 Drop the brush for the first time.
