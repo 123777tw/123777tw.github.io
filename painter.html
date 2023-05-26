@@ -232,6 +232,18 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	}
 }
 //以下是菜单功能。 The following are menu functions.
+var longPressTimerID;//在全局存储长按计时器标识符，用于在鼠标抬起时调用停止。 Long press timer identifier in global storage, used to call stop when the mouse is raised.
+function longPressTimer(node){//长按计时器（结点）
+	if(G._menuLock){//只在菜单锁定时可用。 Only available when the menu is locked.
+		function continuousClick(){//连续点击
+			longPressTimerID = setTimeout(function(){//每次点击代入新的ID。 Each click insert a new ID.
+				node.click();//模拟点击事件。 Simulate click an event.
+				continuousClick();//递归调用。 Recursive call.
+			},100);//等待100毫秒。 Wait for 100 milliseconds.
+		}
+		longPressTimerID = setTimeout(function(){longPressTimerID = setTimeout(continuousClick(node),100);},500);//在按下鼠标之后先等待半秒钟，然后模拟连续点击动作。 Wait for half a second after pressing the mouse, and then simulate a continuous click action.
+	}
+}
 function strength(sign){//力度
 	var much = parseInt(sign.value);//将输入内容转为要设定的值。 Convert the input string to the value to be set.
 	if(!much){//没有任何内容或者转化失败。 No content or conversion failed.
@@ -283,6 +295,7 @@ function spill(formula){//调色板2自定义颜色动作。 Custom color action
 	} else{//输入框没有任何内容。 Nothing in the input box.
 		delete ds.fill;//删除颜色设定。 Delete the color setting.
 	}
+	if(!G._menuLock){sh.style.display = m.style.display = "none";}//依据设置隐藏菜单和遮罩。 Hide the menu and the shield according to the setting.
 }
 function undo(indicator){//撤销
 	if(s.children.length > 0) {//判断是否存在笔画。 Determine whether there are strokes.
@@ -386,11 +399,13 @@ G.equips.change = function(indicators,index){//更换绘画工具
 	padding:0
 }
 </style>
-<tr><td onclick="strength_reduce(this.parentNode.nextElementSibling.firstElementChild.firstElementChild)">
+<tr><td onclick="strength_reduce(this.parentNode.nextElementSibling.firstElementChild.firstElementChild)" onmousedown="longPressTimer(this)" onmouseup="clearTimeout(longPressTimerID)">
 <svg height="25px" width="25px" style="stroke:white;stroke-width:3">
 <line x1="4" y1="12" x2="21" y2="12" />
 </svg>
-</td><td><svg height="25px" width="50px"><line x1="25" y1="0" x2="25" y2="25" style="stroke:aqua"/></svg></td><td onclick="strength_increase(this.parentNode.nextElementSibling.firstElementChild.firstElementChild)">
+</td><td><svg height="25px" width="50px">
+<line x1="25" y1="0" x2="25" y2="25" style="stroke:aqua"/>
+</svg></td><td onclick="strength_increase(this.parentNode.nextElementSibling.firstElementChild.firstElementChild)" onmousedown="longPressTimer(this)" onmouseup="clearTimeout(longPressTimerID)">
 <svg height="25px" width="25px" style="stroke:white;stroke-width:3">
 <line x1="5" y1="12" x2="21" y2="12" />
 <line x1="13" y1="4" x2="13" y2="20" />
