@@ -232,8 +232,9 @@ function bodyLoaded(){//所有事件响应相关代码均在静态DOM渲染完�
 	}
 }
 //以下是菜单功能。 The following are menu functions.
-var longPressTimerID;//在全局存储长按计时器标识符，用于在鼠标抬起时调用停止。 Long press timer identifier in global storage, used to call stop when the mouse is raised.
+var longPressTimerID = 0;//在全局存储长按计时器标识符，用于在鼠标抬起时调用停止。 Long press timer identifier in global storage, used to call stop when the mouse is raised.
 function longPressTimer(node){//长按计时器（结点）
+	clearTimeout(longPressTimerID);//取消可能正在模拟的连续点击动作。 Cancel the continuous click action that may be being simulated.
 	if(G._menuLock){//只在菜单锁定时可用。 Only available when the menu is locked.
 		function continuousClick(){//连续点击
 			longPressTimerID = setTimeout(function(){//每次点击代入新的ID。 Each click insert a new ID.
@@ -386,7 +387,7 @@ G.equips.change = function(indicators,index){//更换绘画工具
 }
 </script>
 </head>
-<body style="height:100%;box-sizing:border-box;margin:0px;padding:8px;background-color:blue" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel padding display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
+<body style="height:100%;box-sizing:border-box;margin:0px;padding:8px;background-color:blue;user-select:none" onload="bodyLoaded()" onclick="sh.style.display = m.style.display = 'flex'"><!--8像素边距显示背景颜色：蓝色表示画布大小未固定，灰色表示画布大小已经固定。 8 pixel padding display background color: Blue indicates that the canvas size is not fixed, and gray indicates that the canvas size has been fixed.-->
 <div id="Canvas" style="width:100%;height:100%;background-color:white;cursor:crosshair"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="fill:none;stroke-linecap:round;stroke-linejoin:round"></svg></div><!--画布与图片本体。 The canvas with the picture ontology.-->
 <div id="Shield" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:#4449"></div><!--遮罩。-->
 <div id="Menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;flex-wrap:wrap;pointer-events:none"><!--菜单布局框架。 The menu layout frame.-->
