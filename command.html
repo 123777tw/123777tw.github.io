@@ -46,7 +46,7 @@ function execute(input, output){//执行（输入框，输出框）
 <button id="toolbar_save" onclick="save(document.getElementById('input'))">&#x1F4BE;</button><!--保存按钮。 Save button.-->
 <button id="toolbar_clear" onclick="document.getElementById('input').value = ''">X</button><!--清除按钮。 Clear button.-->
 <button id="toolbar_fill" onclick="document.getElementById('input').value += document.getElementById('output').value">&#x2191;</button><!--填充结果按钮。 Fill results button.-->
-<button id="toolbar_keyboard" onclick="keyboard(document.getElementById('keyboard'),this,'calc(100vh - '+(this,document.getElementById('main').offsetHeight+16)+'px')" style="color:black;background-color:white">&#x2328;</button><!--显示/隐藏键盘按钮。 Show / hide keyboard button.-->
+<button id="toolbar_keyboard" onclick="keyboard(document.getElementById('keyboard'),this,'calc(100% - '+(this,document.getElementById('main').offsetHeight+16)+'px')" style="color:black;background-color:white">&#x2328;</button><!--显示/隐藏键盘按钮。 Show / hide keyboard button.-->
 <button id="toolbar_execute" onclick="execute(document.getElementById('input'),document.getElementById('output'))">&#x25B6;</button><!--执行按钮。 Execute button.-->
 </div>
 <textarea id="input" style="display:block;width:100%;color:navy" placeholder=">"></textarea><!--输入框。 Input box.-->
