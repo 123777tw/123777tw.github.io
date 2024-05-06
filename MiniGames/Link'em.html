@@ -175,6 +175,7 @@ function select(card){//选择牌
 							Y1 = Y;//复原迭代纵坐标
 							while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
 								if(--Y1 < 0 || board.rows[Y1].cells[X1].innerHTML){//向上遍历路径，并在受阻或超界时
+									SelectedPath1 = [];//清空缓存路径
 									coords2[3] = Math.max(Y1 + 1,coords[4]);//缓存上延伸边界
 									if(!explore2TurnsPath()){//二次转弯路径逻辑未找到连接路径
 										return;//结束点选
