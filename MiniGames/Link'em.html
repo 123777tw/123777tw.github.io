@@ -12,6 +12,8 @@ const board = document.createElement('table');//游戏面板
 const cards = [];//存牌节点组
 var selectedCard;//选牌节点
 const coords = [0,0,0,0,0,0];//选牌延伸坐标范围组：横纵左右上下，用于探索路径
+var timerID;//使用setInterval函数构建计时器时的返回值
+const timerNode = document.createElement('span');//计时器前端显示节点
 function shuffle(){//洗牌：Fisher-Yates洗牌法
 	for(var i = cards.length; i > 0; i--){
 		var j = Math.floor(Math.random()*i);//确定对调牌
@@ -55,6 +57,20 @@ function select(card){//选择牌
 		coords[5] = i - 1;
 		card.bgColor = 'silver';//标记选中状态
 		selectedCard = card;//正式选中
+		if(!timerID){
+			timerID = setInterval(function(){//计时器逻辑
+				var time = timerNode.innerText.split(':');//抓取当前计时
+				var m = parseInt(time[0]);//数字分
+				var s = parseInt(time[1]);//数字秒
+				if(s < 59){//如果秒不需要进位
+					timerNode.innerText = time[0] + ':' + (s + 101).toString().slice(-2);//只增加一秒
+				}else{
+					if(m < 99){//分钟数字未满
+						timerNode.innerText = (m + 101).toString().slice(-2) + ':00';//满60秒进位
+					}
+				}
+			},1000);
+		}
 	}
 	function explore2TurnsPath(){//探索二次转弯路径
 		var i;//循环节纵坐标迭代器
@@ -227,16 +243,26 @@ function select(card){//选择牌
 	cards.splice(cards.indexOf(selectedCard),1);//存牌节点组移除旧选牌
 	cards.splice(cards.indexOf(card),1);//存牌节点组移除新选牌
 	selectedCard = undefined;//消除选牌
+	if(!cards.length){//如果全部消除
+		clearInterval(timerID);//停止计时
+		timerNode.setAttribute('onclick','location.reload()');//点击计时器面板刷新页面
+		timerID = setInterval(function(){//闪烁计时器时间
+			timerNode.style.color = 'white';//熄灭
+			setTimeout(function(){//等待亮起
+				timerNode.style.color = 'black';//亮起
+			},500);//等待半秒
+		},1000);//每秒闪烁一次
+	}
 	setTimeout(function(){//延迟执行部分
 		for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
 			SelectedPath[i].removeAttribute('style');//移除高亮
 		}
 	},500);//延迟时长半秒
 }
-function selectCancel(){
-	if(selectedCard){
-		selectedCard.removeAttribute('bgColor');
-		selectedCard = undefined;
+function selectCancel(){//取消选牌
+	if(selectedCard){//如果当前存在选牌
+		selectedCard.removeAttribute('bgColor');//移除选牌背景色
+		selectedCard = undefined;//移除选牌
 	}
 }
 function init(){//初始化界面
@@ -253,7 +279,9 @@ function init(){//初始化界面
 		iN.setAttribute('onclick','select(this)');//点击事件
 		cards.push(iN);//递归节点设置完成
 	}
-	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">S</button>';//洗牌按钮
+	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">&#x1F504</button>';//洗牌按钮
+	board.rows[board.rows.length-1].firstElementChild.appendChild(timerNode);//计时器面板
+	timerNode.innerText = '00:00';
 	document.body.appendChild(board);//构建完成
 }
 </script>
