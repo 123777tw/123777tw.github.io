@@ -9,17 +9,46 @@ var H = 10;//面板高度
 var N = (W-2)*(H-2);//牌数量
 var K = N/4;//牌种数
 const board = document.createElement('table');//游戏面板
+const controlPannel = document.createElement('div');//控制面板
 const cards = [];//存牌节点组
 var selectedCard;//选牌节点
 const coords = [0,0,0,0,0,0];//选牌延伸坐标范围组：横纵左右上下，用于探索路径
 var timerID;//使用setInterval函数构建计时器时的返回值
 const timerNode = document.createElement('span');//计时器前端显示节点
+function TimerWorking(){//计时逻辑
+	var time = timerNode.innerText.split(':');//抓取当前计时
+	var m = parseInt(time[0]);//数字分
+	var s = parseInt(time[1]);//数字秒
+	if(s < 59){//如果秒不需要进位
+		timerNode.innerText = time[0] + ':' + (s + 101).toString().slice(-2);//只增加一秒
+	}else{
+		if(m < 99){//分钟数字未满
+			timerNode.innerText = (m + 101).toString().slice(-2) + ':00';//满60秒进位
+		}
+	}
+}
+function TimerPause(){//计时暂停
+	clearInterval(timerID);//停止计时
+	timerID = setInterval(function(){//闪烁计时器时间
+		timerNode.style.color = 'white';//熄灭
+		setTimeout(function(){//等待亮起
+			timerNode.style.color = 'black';//亮起
+		},500);//等待半秒
+	},1000);//每秒闪烁一次
+}
+function TimerRecovery(){//计时恢复
+	clearInterval(timerID);//闪烁停止
+	timerID = setInterval(TimerWorking,1000);//计时开始
+}
 function shuffle(){//洗牌：Fisher-Yates洗牌法
 	for(var i = cards.length; i > 0; i--){
 		var j = Math.floor(Math.random()*i);//确定对调牌
-		var jT = cards[j].innerText//缓存对调牌面
+		var jT = cards[j].innerText;//缓存对调牌面
+		var jS = cards[j].getAttribute('style');//缓存对调牌样式
 		cards[j].innerText = cards[i-1].innerText;//洗牌
-		cards[i-1].innerText = jT;//取回缓存对调牌
+		cards[j].setAttribute('style',cards[i-1].getAttribute('style'));//样式跟随
+		cards[i-1].innerText = jT;//取回缓存对调牌面
+		cards[i-1].setAttribute('style',jS);//取回缓存对调牌样式
 	}
 }
 function select(card){//选择牌
@@ -57,19 +86,9 @@ function select(card){//选择牌
 		coords[5] = i - 1;
 		card.bgColor = 'silver';//标记选中状态
 		selectedCard = card;//正式选中
-		if(!timerID){
-			timerID = setInterval(function(){//计时器逻辑
-				var time = timerNode.innerText.split(':');//抓取当前计时
-				var m = parseInt(time[0]);//数字分
-				var s = parseInt(time[1]);//数字秒
-				if(s < 59){//如果秒不需要进位
-					timerNode.innerText = time[0] + ':' + (s + 101).toString().slice(-2);//只增加一秒
-				}else{
-					if(m < 99){//分钟数字未满
-						timerNode.innerText = (m + 101).toString().slice(-2) + ':00';//满60秒进位
-					}
-				}
-			},1000);
+		if(!timerID){//游戏尚未开始
+			timerID = setInterval(TimerWorking,1000);//计时开始
+			timerNode.setAttribute('onclick','TimerPause();controlPannel.style.display="block"');//点击计时器可暂停
 		}
 	}
 	function explore2TurnsPath(){//探索二次转弯路径
@@ -243,15 +262,9 @@ function select(card){//选择牌
 	cards.splice(cards.indexOf(selectedCard),1);//存牌节点组移除旧选牌
 	cards.splice(cards.indexOf(card),1);//存牌节点组移除新选牌
 	selectedCard = undefined;//消除选牌
-	if(!cards.length){//如果全部消除
-		clearInterval(timerID);//停止计时
+	if(!cards.length){//如果游戏完成
+		TimerPause();//计时暂停
 		timerNode.setAttribute('onclick','location.reload()');//点击计时器面板刷新页面
-		timerID = setInterval(function(){//闪烁计时器时间
-			timerNode.style.color = 'white';//熄灭
-			setTimeout(function(){//等待亮起
-				timerNode.style.color = 'black';//亮起
-			},500);//等待半秒
-		},1000);//每秒闪烁一次
 	}
 	setTimeout(function(){//延迟执行部分
 		for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
@@ -266,38 +279,53 @@ function selectCancel(){//取消选牌
 	}
 }
 function init(){//初始化界面
-	board.innerHTML = Array.prototype.join.call({length:H+1},'<tr>'+Array.prototype.join.call({length:W+1},'<td onclick="selectCancel()"></td>')+'</tr>');//构建面板布局
+	board.innerHTML = Array.prototype.join.call({length:H+1},'<tr>'+Array.prototype.join.call({length:W+1},'<td onclick="selectCancel()"></td>')+'</tr>');//构建游戏面板布局
 	for(var i = N; i > 0; i--){//布牌：融合了洗牌
 		var iN = board.rows[Math.ceil(i/(W-2))].cells[(i-1)%(W-2)+1];//递归节点
 		var iV = iN.innerText;//递归节点当前值
 		var j = Math.floor(Math.random()*(i-1))+1;//洗牌位置
 		var jN = board.rows[Math.ceil(j/(W-2))].cells[(j-1)%(W-2)+1];//洗牌节点
-		var jV = jN.innerHTML;//洗牌节点当前值
-		jN.innerHTML = iV? iV: Math.ceil(i/4).toString();//洗牌节点递归值
+		var jV = jN.innerText;//洗牌节点当前值
+		jN.innerText = iV? iV: Math.ceil(i/4).toString();//洗牌节点递归值
 		iN.innerText = jV? jV: Math.ceil(j/4).toString();//递归节点洗牌值
+		iN.style.cssText = localStorage? localStorage.getItem("MiniGames|Link'em|C"+iN.innerText): '';//从缓存获取预设值的牌样式
 		iN.style.border = '1px solid';//递归节点边框
 		iN.setAttribute('onclick','select(this)');//点击事件
 		cards.push(iN);//递归节点设置完成
 	}
-	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">&#x1F504</button>';//洗牌按钮
+	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">&#x1F504;</button>';//洗牌按钮
 	board.rows[board.rows.length-1].firstElementChild.appendChild(timerNode);//计时器面板
-	timerNode.innerText = '00:00';
-	document.body.appendChild(board);//构建完成
+	timerNode.innerText = '00:00';//计时器置零
+	document.body.appendChild(board);//游戏面板构建完成
+	controlPannel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;display:none';//控制面板遮罩
+	controlPannel.innerHTML = '<div style="border:1px solid;height:80%;width:90%;background:white;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;font-size:50vh;text-align:center">&#128164;</div>';//控制面板内容
+	controlPannel.setAttribute('onclick','TimerRecovery();controlPannel.style.display="none"');//点击恢复游戏
+	document.body.appendChild(controlPannel);//控制面板构建完成
 }
 </script>
 <style>
 table {
-	height:100%;
-	width:100%;
+	height: 100%;
+	width: 100%;
 	table-layout: fixed;
 	text-align: center
 }
 tr {
-	height:10%
+	height: 10%
 }
 td {
-	width:6%;
+	width: 6%;
 	box-sizing: border-box;
+	background-size: 90% 90%;
+	background-position: center;
+	background-repeat: no-repeat
+}
+* {
+	cursor: default;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none
 }
 </style>
 </head>
