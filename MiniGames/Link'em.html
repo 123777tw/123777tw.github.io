@@ -11,10 +11,10 @@ var K = N/4;//牌种数
 const board = document.createElement('table');//游戏面板
 const controlPannel = document.createElement('div');//控制面板
 const cards = [];//存牌节点组
-var selectedCard;//选牌节点
-const coords = [0,0,0,0,0,0];//选牌延伸坐标范围组：横纵左右上下，用于探索路径
+var selectedCard;//先选牌节点
+const coords = [0,0,0,0,0,0];//先选牌延伸坐标范围组：横纵左右上下，用于探索路径
 var timerID;//使用setInterval函数构建计时器时的返回值
-const timerNode = document.createElement('span');//计时器前端显示节点
+const timerNode = document.createElement('button');//计时器前端显示节点
 function TimerWorking(){//计时逻辑
 	var time = timerNode.innerText.split(':');//抓取当前计时
 	var m = parseInt(time[0]);//数字分
@@ -51,58 +51,72 @@ function shuffle(){//洗牌：Fisher-Yates洗牌法
 		cards[i-1].setAttribute('style',jS);//取回缓存对调牌样式
 	}
 }
-function select(card){//选择牌
-	const rowPositions = card.parentNode.cells;//横排布局：具有天然的集合，缓存以期望提升性能
-	const X = Array.prototype.indexOf.call(rowPositions,card);//选点横坐标
-	const Y = Array.prototype.indexOf.call(board.rows,card.parentNode);//选点纵坐标
-	var SelectedPath = [];//用于缓存连接路径供延迟取消高亮
+function preExplore(X,Y,coords,rowPositions){//填充先选牌延伸坐标范围组
+	coords[0] = X;//记录横坐标
+	coords[1] = Y;//记录纵坐标
+	var i = X - 1;//向左探索边界迭代器：向探索方向偏移一个位置，以下类推。
+	while(i >= 0 && !rowPositions[i].innerText){//未超出游戏面板并且迭代位置不存在牌：下同
+		i--;//顺移迭代器：下同
+	}
+	coords[2] = i + 1;//上一个位置标记为边界：下同
+	i = X + 1;//右
+	while(i < W && !rowPositions[i].innerText){
+		i++;
+	}
+	coords[3] = i - 1;
+	i = Y - 1;//上
+	while(i >= 0 && !board.rows[i].cells[X].innerText){
+		i--;
+	}
+	coords[4] = i + 1;
+	i = Y + 1;//下
+	while(i < H && !board.rows[i].cells[X].innerText){
+		i++;
+	}
+	coords[5] = i - 1;
+}
+function explorePath(selectedCard,coords,card,X,Y,SelectedPath){//探索连接路径
 	var X1 = X;//用于缓存探索潜在转弯路径时迭代的横坐标
 	var Y1 = Y;//用于缓存探索潜在转弯路径时迭代的横纵标
-	var SelectedPath1 = [];//用于缓存潜在的一次转弯连接路径供以四个不同方向探索和撤销
-	const coords2 = [0,0,0,0];//用于在探索二次转弯路径时缓存新旧选牌相关坐标范围组：右左下上
-	//var SelectedPath2 = [];//用于缓存潜在的二次转弯连接路径供以四个不同方向探索和撤销
-	function first(){//首次选牌逻辑
-		coords[0] = X;//记录横坐标
-		coords[1] = Y;//记录纵坐标
-		var i = X - 1;//向左探索边界迭代器：向探索方向偏移一个位置，以下类推。
-		while(i >= 0 && !rowPositions[i].innerText){//未超出游戏面板并且迭代位置不存在牌：下同
-			i--;//顺移迭代器：下同
+	const coords2 = [0,0,0,0];//用于在探索二次转弯路径时缓存新先选牌相关坐标范围组：右左下上
+	function hightlightPath(){//高亮并缓存连接路径
+		card.style.border = '1px solid aqua';//后选牌高亮
+		SelectedPath.unshift(card);//缓存后选牌
+		for(var i = 1; i < SelectedPath.length; i++){//遍历转弯路径缓存节点
+			SelectedPath[i].style.border = '1px solid aqua';//迭代路径高亮
 		}
-		coords[2] = i + 1;//上一个位置标记为边界：下同
-		i = X + 1;//右
-		while(i < W && !rowPositions[i].innerText){
-			i++;
+		while(Y1 > coords[1] + 1){//向上遍历路径
+			board.rows[--Y1].cells[X1].style.border = '1px solid aqua';//迭代路径高亮
+			SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
 		}
-		coords[3] = i - 1;
-		i = Y - 1;//上
-		while(i >= 0 && !board.rows[i].cells[X].innerText){
-			i--;
+		while(Y1 < coords[1] - 1){//向下遍历路径
+			board.rows[++Y1].cells[X1].style.border = '1px solid aqua';//迭代路径高亮
+			SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
 		}
-		coords[4] = i + 1;
-		i = Y + 1;//下
-		while(i < H && !board.rows[i].cells[X].innerText){
-			i++;
+		while(X1 > coords[0] + 1){//向左遍历路径
+			board.rows[Y1].cells[--X1].style.border = '1px solid aqua';//迭代路径高亮
+			SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
 		}
-		coords[5] = i - 1;
-		card.bgColor = 'silver';//标记选中状态
-		selectedCard = card;//正式选中
-		if(!timerID){//游戏尚未开始
-			timerID = setInterval(TimerWorking,1000);//计时开始
-			timerNode.setAttribute('onclick','TimerPause();controlPannel.style.display="block"');//点击计时器可暂停
+		while(X1 < coords[0] - 1){//向右遍历路径
+			board.rows[Y1].cells[++X1].style.border = '1px solid aqua';//迭代路径高亮
+			SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
 		}
+		selectedCard.style.border = '1px solid aqua';//先选牌高亮
+		SelectedPath.push(selectedCard);//缓存先选牌
+		return true;//可以连接
 	}
-	function explore2TurnsPath(){//探索二次转弯路径
+	function explore2TurnsPath(){//探索二次转弯路径（声明函数以减少代码缩进并增加可读性）
 		var i;//循环节纵坐标迭代器
 		var j;//循环节横坐标迭代器
-		if(coords2[2] > coords2[3]){//纵横纵二次转弯路径探索
+		if(coords2[2] >= coords2[3]){//纵横纵二次转弯路径探索
 			for(i = coords2[3];i <= coords2[2];i++){//遍历横线可能的纵坐标
-				if(X < coords[0]){//当选牌在旧选牌的左侧
+				if(X < coords[0]){//当选牌在先选牌的左侧
 					for(j = X;j < coords[0];j++){//遍历某一横线
 						if(board.rows[i].cells[j].innerHTML){//如果发现有牌阻挡
 							break;//取消遍历横线
 						}
 					}
-				}else{//当选牌在旧选牌的右侧
+				}else{//当选牌在先选牌的右侧
 					for(j = X;j > coords[0];j--){//遍历某一横线
 						if(board.rows[i].cells[j].innerHTML){//如果发现有牌阻挡
 							break;//取消遍历横线
@@ -112,35 +126,32 @@ function select(card){//选择牌
 				if(j == coords[0]){//遍历某一横线时从头至尾没有牌阻挡
 					X1 = j;//缓存第二次转弯位置横坐标
 					Y1 = i;//缓存第二次转弯位置纵坐标
-					//SelectedPath.push([X,Y]->[X,i]->[j,i])
-					for(i = Y;i <= Y1;i++){//选牌在横线上方时自上而下遍历未转弯路径
-						board.rows[i].cells[X].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[i].cells[X]);//缓存迭代路径
+					i = Y;//从选牌纵坐标开始遍历未转弯路径
+					j = X;//从选牌横坐标开始遍历横线路径
+					while(i < Y1){//选牌在横线上方时自上而下遍历未转弯路径至横线
+						SelectedPath.push(board.rows[++i].cells[X]);//缓存迭代路径
 					}
-					for(i = Y;i >= Y1;i--){//选牌在横线下方时自下而上遍历未转弯路径
-						board.rows[i].cells[X].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[i].cells[X]);//缓存迭代路径
+					while(i > Y1){//选牌在横线下方时自下而上遍历未转弯路径至横线
+						SelectedPath.push(board.rows[--i].cells[X]);//缓存迭代路径
 					}
-					for(j = X;j <= X1;j++){//选牌在旧选牌的左侧时从左向右遍历横线路径
-						board.rows[Y1].cells[j].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[Y1].cells[j]);//缓存迭代路径
+					while(j < X1){//选牌在先选牌的左侧时从左向右遍历横线路径
+						SelectedPath.push(board.rows[Y1].cells[++j]);//缓存迭代路径
 					}
-					for(j = X;j >= X1;j--){//选牌在旧选牌的右侧时从右向左遍历横线路径
-						board.rows[Y1].cells[j].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[Y1].cells[j]);//缓存迭代路径
+					while(j > X1){//选牌在先选牌的右侧时从右向左遍历横线路径
+						SelectedPath.push(board.rows[Y1].cells[--j]);//缓存迭代路径
 					}
-					return true;//可以连接
+					return hightlightPath();//高亮路径（可以连接）
 				}
 			}
 		}else{//横纵横二次转弯路径探索
 			for(j = coords2[1];j <= coords2[0];j++){//遍历竖线可能的横坐标
-				if(Y < coords[1]){//当选牌在旧选牌的上方
+				if(Y < coords[1]){//当选牌在先选牌的上方
 					for(i = Y;i < coords[1];i++){//遍历某一竖线
 						if(board.rows[i].cells[j].innerHTML){//如果发现有牌阻挡
 							break;//取消遍历竖线
 						}
 					}
-				}else{//当选牌在旧选牌的下方
+				}else{//当选牌在先选牌的下方
 					for(i = Y;i > coords[1];i--){//遍历某一竖线
 						if(board.rows[i].cells[j].innerHTML){//如果发现有牌阻挡
 							break;//取消遍历竖线
@@ -150,36 +161,104 @@ function select(card){//选择牌
 				if(i == coords[1]){//遍历某一竖线时从头至尾没有牌阻挡
 					X1 = j;//缓存第二次转弯位置横坐标
 					Y1 = i;//缓存第二次转弯位置纵坐标
+					i = Y;//从选牌纵坐标开始遍历竖线路径
+					j = X;//从选牌横坐标开始遍历未转弯路径
 					//SelectedPath.push([X,Y]->[j,Y]->[j,i])
-					for(j = X;j <= X1;j++){//选牌在竖线左方时从左向右遍历未转弯路径
-						board.rows[Y].cells[j].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[Y].cells[j]);//缓存迭代路径
+					while(j < X1){//选牌在竖线左方时从左向右遍历未转弯路径至竖线
+						SelectedPath.push(board.rows[Y].cells[++j]);//缓存迭代路径
 					}
-					for(j = X;j >= X1;j--){//选牌在竖线右方时从右向左遍历未转弯路径
-						board.rows[Y].cells[j].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[Y].cells[j]);//缓存迭代路径
+					while(j > X1){//选牌在竖线右方时从右向左遍历未转弯路径至竖线
+						SelectedPath.push(board.rows[Y].cells[--j]);//缓存迭代路径
 					}
-					for(i = Y;i <= Y1;i++){//选牌在旧选牌的上方时自上而下遍历竖线路径
-						board.rows[i].cells[X1].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[i].cells[X1]);//缓存迭代路径
+					while(i < Y1){//选牌在先选牌的上方时自上而下遍历竖线路径
+						SelectedPath.push(board.rows[++i].cells[X1]);//缓存迭代路径
 					}
-					for(i = Y;i >= Y1;i--){//选牌在旧选牌的下方时自下而上遍历竖线路径
-						board.rows[i].cells[X1].style.border = '1px solid aqua';//高亮迭代路径
-						SelectedPath.push(board.rows[i].cells[X1]);//缓存迭代路径
+					while(i > Y1){//选牌在先选牌的下方时自下而上遍历竖线路径
+						SelectedPath.push(board.rows[--i].cells[X1]);//缓存迭代路径
 					}
-					return true;//可以连接
+					return hightlightPath();//高亮路径（可以连接）
 				}
 			}
 		}
-		selectedCard.style.border = '1px solid red';//旧选牌高亮
-		card.style.border = '1px solid red';//新选牌高亮
-		oldSelectedCard = selectedCard;//缓存旧选牌供延迟执行
-		selectedCard = undefined;//消除选牌
-		setTimeout(function(){//延迟执行部分
-			oldSelectedCard.style.border = '1px solid';//移除旧选牌高亮
-			card.style.border = '1px solid';//移除新选牌高亮
-		},500);//延迟时长半秒
 		return false;//无法连接
+	}
+	while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
+		if(++X1 >= W || board.rows[Y1].cells[X1].innerHTML){//向右遍历路径，并在受阻或超界时
+			SelectedPath.length = 0;//清空缓存路径
+			coords2[0] = Math.min(X1 - 1,coords[3]);//缓存右延伸边界
+			X1 = X;//复原迭代横坐标
+			while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
+				if(--X1 < 0 || board.rows[Y1].cells[X1].innerHTML){//向左遍历路径，并在受阻或超界时
+					SelectedPath.length = 0;//清空缓存路径
+					coords2[1] = Math.max(X1 + 1,coords[2]);//缓存左延伸边界
+					X1 = X;//复原迭代横坐标
+					while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
+						if(++Y1 >= H || board.rows[Y1].cells[X1].innerHTML){//向下遍历路径，并在受阻或超界时
+							SelectedPath.length = 0;//清空缓存路径
+							coords2[2] = Math.min(Y1 - 1,coords[5]);//缓存下延伸边界
+							Y1 = Y;//复原迭代纵坐标
+							while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
+								if(--Y1 < 0 || board.rows[Y1].cells[X1].innerHTML){//向上遍历路径，并在受阻或超界时
+									SelectedPath.length = 0;//清空缓存路径
+									coords2[3] = Math.max(Y1 + 1,coords[4]);//缓存上延伸边界
+									return explore2TurnsPath();//继续探索二次转弯路径
+								}else{
+									SelectedPath.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
+								}
+							}
+						}else{
+							SelectedPath.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
+						}
+					}
+				}else{
+					SelectedPath.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
+				}
+			}
+		}else{
+			SelectedPath.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
+		}
+	}
+	return hightlightPath();//高亮路径（（一次转弯迭代点）可直线连接）
+}
+function cheat(){
+	const coords = [];//覆盖全局先选牌延伸坐标范围组用以内部迭代
+	var rowPositions;//横排布局：具有天然的集合，缓存以期望提升性能
+	const SelectedPath = [];//用于缓存连接路径供延迟取消高亮
+	var i = cards.length;//先选牌迭代器
+	var j;//后选牌迭代器
+	while(--i >= 0){//遍历先选牌
+		rowPositions = cards[i].parentNode.cells;//缓存横排布局
+		preExplore(Array.prototype.indexOf.call(rowPositions,cards[i]),Array.prototype.indexOf.call(board.rows,cards[i].parentNode),coords,rowPositions);//填充先选牌延伸坐标范围组
+		j = i;//后选牌迭代范围
+		while(--j >= 0){//遍历后选牌
+			if(cards[j].innerHTML == cards[i].innerHTML){//先确保牌面相同
+				if(explorePath(cards[i],coords,cards[j],Array.prototype.indexOf.call(cards[j].parentNode.cells,cards[j]),Array.prototype.indexOf.call(board.rows,cards[j].parentNode),SelectedPath)){//找到任意可连接路径
+					setTimeout(function(){//延迟执行部分
+						SelectedPath[0].style.borderColor = '';//后选牌恢复边框
+						for(var i = 1; i < SelectedPath.length - 1; i++){//遍历缓存节点
+							SelectedPath[i].removeAttribute('style');//移除高亮
+						}
+						SelectedPath[SelectedPath.length - 1].style.borderColor = '';//先选牌恢复边框
+					},500);//延迟时长半秒
+					return;
+				}
+			}
+		}
+	}
+}
+function select(card){//选择牌
+	const rowPositions = card.parentNode.cells;//横排布局：具有天然的集合，缓存以期望提升性能
+	const X = Array.prototype.indexOf.call(rowPositions,card);//选点横坐标
+	const Y = Array.prototype.indexOf.call(board.rows,card.parentNode);//选点纵坐标
+	const SelectedPath = [];//用于缓存连接路径供延迟取消高亮
+	function first(){//首次选牌逻辑
+		preExplore(X,Y,coords,rowPositions);//填充先选牌延伸坐标范围组
+		card.bgColor = 'silver';//标记选中状态
+		selectedCard = card;//正式选中
+		if(!timerID){//游戏尚未开始
+			timerID = setInterval(TimerWorking,1000);//计时开始
+			timerNode.setAttribute('onclick','TimerPause();controlPannel.style.display="block"');//点击计时器可暂停
+		}
 	}
 	if(!selectedCard){//首次选牌
 		first();
@@ -193,84 +272,33 @@ function select(card){//选择牌
 		first();
 		return;
 	}
-	while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
-		if(++X1 >= W || board.rows[Y1].cells[X1].innerHTML){//向右遍历路径，并在受阻或超界时
-			SelectedPath1 = [];//清空缓存路径
-			coords2[0] = Math.min(X1 - 1,coords[3]);//缓存右延伸边界
-			X1 = X;//复原迭代横坐标
-			while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
-				if(--X1 < 0 || board.rows[Y1].cells[X1].innerHTML){//向左遍历路径，并在受阻或超界时
-					SelectedPath1 = [];//清空缓存路径
-					coords2[1] = Math.max(X1 + 1,coords[2]);//缓存左延伸边界
-					X1 = X;//复原迭代横坐标
-					while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
-						if(++Y1 >= H || board.rows[Y1].cells[X1].innerHTML){//向下遍历路径，并在受阻或超界时
-							SelectedPath1 = [];//清空缓存路径
-							coords2[2] = Math.min(Y1 - 1,coords[5]);//缓存下延伸边界
-							Y1 = Y;//复原迭代纵坐标
-							while((X1 != coords[0] || Y1 < coords[4] - 1 || Y1 > coords[5] + 1)&&(Y1 != coords[1] || X1 < coords[2] - 1 || X1 > coords[3] + 1)){//不可直线连接
-								if(--Y1 < 0 || board.rows[Y1].cells[X1].innerHTML){//向上遍历路径，并在受阻或超界时
-									SelectedPath1 = [];//清空缓存路径
-									coords2[3] = Math.max(Y1 + 1,coords[4]);//缓存上延伸边界
-									if(!explore2TurnsPath()){//二次转弯路径逻辑未找到连接路径
-										return;//结束点选
-									}
-								}else{
-									SelectedPath1.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
-								}
-							}
-						}else{
-							SelectedPath1.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
-						}
-					}
-				}else{
-					SelectedPath1.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
-				}
+	if(explorePath(selectedCard,coords,card,X,Y,SelectedPath)){//可以连接
+		selectedCard.innerHTML = '';//先选牌消除显示
+		card.innerHTML = '';//后选牌消除显示
+		selectedCard.setAttribute('onclick','selectCancel()');//先选牌消除点击事件
+		card.setAttribute('onclick','selectCancel()');//后选牌消除点击事件
+		cards.splice(cards.indexOf(selectedCard),1);//存牌节点组移除先选牌
+		cards.splice(cards.indexOf(card),1);//存牌节点组移除后选牌
+		selectedCard = undefined;//消除选牌
+		if(!cards.length){//如果游戏完成
+			TimerPause();//计时暂停
+			timerNode.setAttribute('onclick','location.reload()');//点击计时器面板刷新页面
+		}
+		setTimeout(function(){//延迟执行部分
+			for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
+				SelectedPath[i].removeAttribute('style');//移除高亮
 			}
-		}else{
-			SelectedPath1.push(board.rows[Y1].cells[X1]);//缓存潜在一次转弯路径节点
-		}
+		},500);//延迟时长半秒
+	}else{//无法连接
+		selectedCard.style.border = '1px solid red';//先选牌高亮
+		card.style.border = '1px solid red';//后选牌高亮
+		oldSelectedCard = selectedCard;//缓存先选牌供延迟执行
+		selectedCard = undefined;//消除选牌
+		setTimeout(function(){//延迟执行部分
+			oldSelectedCard.style.border = '1px solid';//移除先选牌高亮
+			card.style.border = '1px solid';//移除后选牌高亮
+		},500);//延迟时长半秒
 	}
-	card.style.border = '1px solid aqua';//新选牌高亮
-	SelectedPath.unshift(card);//缓存新选牌
-	Array.prototype.push.apply(SelectedPath,SelectedPath1);//合并可能存在的一次转弯路径
-	while(SelectedPath1.length){//遍历一次转弯缓存节点
-		SelectedPath1.pop().style.border = '1px solid aqua';//迭代路径高亮
-	}
-	while(Y1 > coords[1] + 1){//向上遍历路径
-		board.rows[--Y1].cells[X1].style.border = '1px solid aqua';//迭代路径高亮
-		SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
-	}
-	while(Y1 < coords[1] - 1){//向下遍历路径
-		board.rows[++Y1].cells[X1].style.border = '1px solid aqua';//迭代路径高亮
-		SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
-	}
-	while(X1 > coords[0] + 1){//向左遍历路径
-		board.rows[Y1].cells[--X1].style.border = '1px solid aqua';//迭代路径高亮
-		SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
-	}
-	while(X1 < coords[0] - 1){//向右遍历路径
-		board.rows[Y1].cells[++X1].style.border = '1px solid aqua';//迭代路径高亮
-		SelectedPath.push(board.rows[Y1].cells[X1]);//缓存迭代路径
-	}
-	selectedCard.style.border = '1px solid aqua';//旧选牌高亮
-	SelectedPath.push(selectedCard);//缓存旧选牌
-	selectedCard.innerHTML = '';//旧选牌消除显示
-	card.innerHTML = '';//新选牌消除显示
-	selectedCard.setAttribute('onclick','selectCancel()');//旧选牌消除点击事件
-	card.setAttribute('onclick','selectCancel()');//新选牌消除点击事件
-	cards.splice(cards.indexOf(selectedCard),1);//存牌节点组移除旧选牌
-	cards.splice(cards.indexOf(card),1);//存牌节点组移除新选牌
-	selectedCard = undefined;//消除选牌
-	if(!cards.length){//如果游戏完成
-		TimerPause();//计时暂停
-		timerNode.setAttribute('onclick','location.reload()');//点击计时器面板刷新页面
-	}
-	setTimeout(function(){//延迟执行部分
-		for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
-			SelectedPath[i].removeAttribute('style');//移除高亮
-		}
-	},500);//延迟时长半秒
 }
 function selectCancel(){//取消选牌
 	if(selectedCard){//如果当前存在选牌
@@ -281,21 +309,22 @@ function selectCancel(){//取消选牌
 function init(){//初始化界面
 	board.innerHTML = Array.prototype.join.call({length:H+1},'<tr>'+Array.prototype.join.call({length:W+1},'<td onclick="selectCancel()"></td>')+'</tr>');//构建游戏面板布局
 	for(var i = N; i > 0; i--){//布牌：融合了洗牌
-		var iN = board.rows[Math.ceil(i/(W-2))].cells[(i-1)%(W-2)+1];//递归节点
-		var iV = iN.innerText;//递归节点当前值
+		var iN = board.rows[Math.ceil(i/(W-2))].cells[(i-1)%(W-2)+1];//遍历节点
+		var iV = iN.innerText;//遍历节点当前值
 		var j = Math.floor(Math.random()*(i-1))+1;//洗牌位置
 		var jN = board.rows[Math.ceil(j/(W-2))].cells[(j-1)%(W-2)+1];//洗牌节点
 		var jV = jN.innerText;//洗牌节点当前值
-		jN.innerText = iV? iV: Math.ceil(i/4).toString();//洗牌节点递归值
-		iN.innerText = jV? jV: Math.ceil(j/4).toString();//递归节点洗牌值
+		jN.innerText = iV? iV: Math.ceil(i/4).toString();//洗牌节点遍历值
+		iN.innerText = jV? jV: Math.ceil(j/4).toString();//遍历节点洗牌值
 		iN.style.cssText = localStorage? localStorage.getItem("MiniGames|Link'em|C"+iN.innerText): '';//从缓存获取预设值的牌样式
-		iN.style.border = '1px solid';//递归节点边框
+		iN.style.border = '1px solid';//遍历节点边框
 		iN.setAttribute('onclick','select(this)');//点击事件
-		cards.push(iN);//递归节点设置完成
+		cards.push(iN);//遍历节点设置完成
 	}
 	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">&#x1F504;</button>';//洗牌按钮
 	board.rows[board.rows.length-1].firstElementChild.appendChild(timerNode);//计时器面板
 	timerNode.innerText = '00:00';//计时器置零
+	board.rows[board.rows.length-1].lastElementChild.innerHTML = '<button onclick="cheat()">&#x1F50D;</button>';//作弊按钮
 	document.body.appendChild(board);//游戏面板构建完成
 	controlPannel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;display:none';//控制面板遮罩
 	controlPannel.innerHTML = '<div style="border:1px solid;height:80%;width:90%;background:white;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;font-size:50vh;text-align:center">&#128164;</div>';//控制面板内容
@@ -320,6 +349,11 @@ td {
 	background-position: center;
 	background-repeat: no-repeat
 }
+button {
+	height: 100%;
+	width: 100%;
+	padding: 0
+}
 * {
 	cursor: default;
 	-webkit-user-select: none;
@@ -329,6 +363,6 @@ td {
 }
 </style>
 </head>
-<body onload="init()" style="height:calc(100% - 16px)">
+<body onload="init()" style="height:calc(100% - 16px);text-shadow:1px 1px 1px white">
 </body>
 </html>
