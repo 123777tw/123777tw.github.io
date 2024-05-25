@@ -10,9 +10,11 @@ var N = (W-2)*(H-2);//牌数量
 var K = N/4;//牌种数
 const board = document.createElement('table');//游戏面板
 const controlPannel = document.createElement('div');//控制面板
+const helpPannel = document.createElement('div');//帮助面板
 const cards = [];//存牌节点组
 var selectedCard;//先选牌节点
 const coords = [0,0,0,0,0,0];//先选牌延伸坐标范围组：横纵左右上下，用于探索路径
+var noticeNode = document.createElement('button');//通知按钮节点
 var timerID;//使用setInterval函数构建计时器时的返回值
 const timerNode = document.createElement('button');//计时器前端显示节点
 function TimerWorking(){//计时逻辑
@@ -321,14 +323,26 @@ function init(){//初始化界面
 		iN.setAttribute('onclick','select(this)');//点击事件
 		cards.push(iN);//遍历节点设置完成
 	}
+	board.rows[0].firstElementChild.appendChild(noticeNode);//通知按钮
+	noticeNode.innerText = '?';//通知帮助
+	noticeNode.setAttribute('onclick','helpPannel.style.display="block";if(timerID){TimerPause();}');//点击显示帮助
 	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">&#x1F504;</button>';//洗牌按钮
 	board.rows[board.rows.length-1].firstElementChild.appendChild(timerNode);//计时器面板
 	timerNode.innerText = '00:00';//计时器置零
+	//timerNode.setAttribute('onclick','controlPannel.style.display="block";if(timerID){TimerPause();}');//TODO:点击计时器可暂停并打开设置面板
 	board.rows[board.rows.length-1].lastElementChild.innerHTML = '<button onclick="cheat()">&#x1F50D;</button>';//作弊按钮
 	document.body.appendChild(board);//游戏面板构建完成
-	controlPannel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;display:none';//控制面板遮罩
+	helpPannel.style.cssText = controlPannel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;display:none';//面板遮罩
+	helpPannel.innerHTML = '<table border="1" style="height:80%;width:90%;background:white;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;text-align:center">'
+		+'<tr><td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid">1</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid">1</td><td></td><td></td></tr><tr></tr><tr><td colspan="8">&#x2713</td></tr></table></td>'
+		+'<td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid">2</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua;color:aqua">&#x2460</td><td></td><td></td></tr><tr><td colspan="5"></td><td style="border:1px solid">2</td></tr><tr><td colspan="8">&#x2713</td></tr></table></td></tr>'
+		+'<tr><td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid aqua;color:aqua">&#x2460</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua;color:aqua">&#x2461</td></tr><tr><td></td><td></td><td style="border:1px solid aqua"></td><td></td><td></td><td style="border:1px solid aqua"></td></tr><tr><td></td><td></td><td style="border:1px solid">3</td><td style="border:1px solid;color:silver">1</td><td style="border:1px solid;color:silver">2</td><td style="border:1px solid">3</td><td></td><td></td></tr><tr><td colspan="8">&#x2713</td></tr></table></td>'
+		+'<td><table><tr></tr><tr><td></td><td></td><td></td><td style="border:1px solid">4</td><td style="border:1px solid">5</td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td style="border:1px solid">5</td><td style="border:1px solid">4</td></tr><tr><td colspan="8">&#x2717</td></tr></table></td></tr>'
+		+'</table>';//帮助面板内容
 	controlPannel.innerHTML = '<div style="border:1px solid;height:80%;width:90%;background:white;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;font-size:50vh;text-align:center">&#128164;</div>';//控制面板内容
-	controlPannel.setAttribute('onclick','TimerRecovery();controlPannel.style.display="none"');//点击恢复游戏
+	helpPannel.setAttribute('onclick','this.style.display="none";if(timerID){TimerRecovery();}');//点击恢复游戏
+	controlPannel.setAttribute('onclick','this.style.display="none";if(timerID){TimerRecovery();}');//点击恢复游戏
+	document.body.appendChild(helpPannel);//帮助面板构建完成
 	document.body.appendChild(controlPannel);//控制面板构建完成
 }
 </script>
@@ -345,6 +359,7 @@ tr {
 td {
 	width: 6%;
 	box-sizing: border-box;
+	padding: 0;
 	background-size: 90% 90%;
 	background-position: center;
 	background-repeat: no-repeat
