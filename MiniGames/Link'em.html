@@ -246,7 +246,11 @@ function cheat(){
 				}
 			}
 		}
-	}
+	}//没有找到任何可连接路径
+	board.rows[0].lastElementChild.style.border = '1px solid aqua';//高亮洗牌按钮所在单元格
+	setTimeout(function(){//延迟执行部分
+		board.rows[0].lastElementChild.removeAttribute('style');//移除高亮
+	},500);//延迟时长半秒
 }
 function select(card){//选择牌
 	const rowPositions = card.parentNode.cells;//横排布局：具有天然的集合，缓存以期望提升性能
@@ -284,8 +288,9 @@ function select(card){//选择牌
 		selectedCard = undefined;//消除选牌
 		if(!cards.length){//如果游戏完成
 			TimerPause();//计时暂停
-			timerNode.setAttribute('onclick','location.reload()');//点击计时器面板刷新页面
-			noticeNode.setAttribute('onclick','location.reload()');//点击通知按钮刷新页面
+			document.body.appendChild(document.createElement('div'));//结算面板
+			document.body.lastElementChild.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto';//面板遮罩
+			document.body.lastElementChild.setAttribute('onclick','location.reload()');//点击结算面板刷新页面
 		}
 		setTimeout(function(){//延迟执行部分
 			for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
