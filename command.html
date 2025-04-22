@@ -5,16 +5,20 @@
 <title>命令 Command</title>
 <!--这是一个允许用户自由提交命令脚本的工具，但具体行为取决于实际使用时浏览器带有的脚本引擎。 This is a tool that allows users to submit command scripts freely, but the specific behavior depends on the script engine with the browser when actually using it.-->
 <script><!--全局/主界面功能。 Global / main interface functions.-->
-function read(file, textarea){//读取（文件，文本区域）
+function read(file, textarea, typing){//读取（文件，文本区域，打字方法）
+if(typeof typing != 'function'){typing = function(node, text){node.value = text;};}//设置针对textarea节点的默认打字方法。 Sets the default typing method for textarea nodes.
 	var fr = new FileReader();//创建一个文件阅读器，用于读取脚本文件。 Create a FileReader to read a script file.
 	fr.readAsText(file);//异步读取。 Asynchronous read.
 	fr.onload = function(){//转换完成后。 After the conversion is completed.
-		textarea.value = this.result;//将读取内容填入文本区域。 Fill the textarea with the read content.
+		typing(textarea, this.result);//将读取内容填入文本区域。 Fill the textarea with the read content.
 	}
 }
-function save(textarea){//保存（文本区域）
+function save(text, aTagDownload, blobOptions){//保存（文本，<a>节点download属性，blob创建配置）
+if(aTagDownload == undefined){aTagDownload = '';}//如果未指定下载文件名，让浏览器自行决定文件名。 If the download file name is not specified, let the browser determine the file name.
+if(typeof blobOptions != 'object'){blobOptions = {type:"application/octet-stream"}}//设置默认二进制对象类型。 Set the default binary object type.
 	var aTag = document.createElement('a');//预期通过模拟点击<a>节点触发下载动作。It is expected to trigger the download action by simulating clicking the <a> node.
-	aTag.href = URL.createObjectURL(new Blob([textarea.value],{type:"application/octet-stream"}));//以文本区域内容生成二进制对象进而生成对象链接并绑定到<a>节点上。 A binary object is generated from the content of the text area, and then the object link is generated and bound to the <a> node.
+	aTag.download = aTagDownload;//设置下载文件名。 Set the name of the download file.
+	aTag.href = URL.createObjectURL(new Blob([text],{type:"application/octet-stream"}));//以文本区域内容生成二进制对象进而生成对象链接并绑定到<a>节点上。 A binary object is generated from the content of the text area, and then the object link is generated and bound to the <a> node.
 	aTag.click();//模拟点击触发下载动作。Simulate clicking to trigger download action.
 	URL.revokeObjectURL(aTag.href);//释放已经无用的URL对象。Release the used URL object.
 }
@@ -28,10 +32,10 @@ function keyboard(div,button,height){//键盘（分区，按钮，高度）
 		button.style.cssText = "color:black;background-color:white";//按钮颜色设置为未按下。 The button color is set to not pressed.
 	}
 }
-function execute(input, output){//执行（输入框，输出框）
+function execute(command, output){//执行（命令脚本，输出框）
 	output.style.color = "black";//将输出框文字颜色恢复为黑色。 Restore the output box text color to black.
 	try{//尝试
-		output.value=eval(input.value);//执行用户提交的脚本，并将返回值填入输出框。 Execute the script submitted by the user and fill the return value in the output box.
+		output.value=eval(command);//执行用户提交的脚本，并将返回值填入输出框。 Execute the script submitted by the user and fill the return value in the output box.
 	} catch(e){//捕捉（异常）
 		output.style.color = "red";//将输出框文字颜色设置为红色以警示这是一条错误信息。 Set the output box text color to red to warn that this is an error message.
 		output.value = e;//将错误信息填入输出框。 Fill the error message in the output box.
@@ -43,11 +47,11 @@ function execute(input, output){//执行（输入框，输出框）
 <div id="main"><!--主界面。 main interface.-->
 <div id="toolbar"><!--工具栏。 Toolbar.-->
 <input id="toolbar_read" type="file" onchange="read(this.files[0],document.getElementById('input'))" /><!--用于引用脚本文件。 Used to reference a script file.-->
-<button id="toolbar_save" onclick="save(document.getElementById('input'))">&#x1F4BE;</button><!--保存按钮。 Save button.-->
+<button id="toolbar_save" onclick="save(document.getElementById('input').value)">&#x1F4BE;</button><!--保存按钮。 Save button.-->
 <button id="toolbar_clear" onclick="document.getElementById('input').value = ''">X</button><!--清除按钮。 Clear button.-->
 <button id="toolbar_fill" onclick="document.getElementById('input').value += document.getElementById('output').value">&#x2191;</button><!--填充结果按钮。 Fill results button.-->
 <button id="toolbar_keyboard" onclick="keyboard(document.getElementById('keyboard'),this,'calc(100% - '+(this,document.getElementById('main').offsetHeight+16)+'px')" style="color:black;background-color:white">&#x2328;</button><!--显示/隐藏键盘按钮。 Show / hide keyboard button.-->
-<button id="toolbar_execute" onclick="execute(document.getElementById('input'),document.getElementById('output'))">&#x25B6;</button><!--执行按钮。 Execute button.-->
+<button id="toolbar_execute" onclick="execute(document.getElementById('input').value,document.getElementById('output'))">&#x25B6;</button><!--执行按钮。 Execute button.-->
 </div>
 <textarea id="input" style="display:block;width:100%;color:navy" placeholder=">"></textarea><!--输入框。 Input box.-->
 <textarea id="output" readonly style="display:block;width:100%" placeholder="<"></textarea><!--输出框。 Output box.-->
@@ -65,7 +69,7 @@ td:active{background-color:#333;color:white}
 <tr><td onclick="type('7')">7</td><td onclick="type('8')">8</td><td onclick="type('9')">9</td><td onclick="type('/')">/</td><td onclick="type('%')">%</td></tr>
 <tr><td onclick="type('4')">4</td><td onclick="type('5')">5</td><td onclick="type('6')">6</td><td onclick="type('*')">*</td><td onclick="type('**')">**</td></tr>
 <tr><td onclick="type('1')">1</td><td onclick="type('2')">2</td><td onclick="type('3')">3</td><td onclick="type('-')">-</td><td onclick="type(outputBox.value)">↑</td></tr>
-<tr><td onclick="type('0')">0</td><td onclick="type('00')">00</td><td onclick="type('.')">.</td><td onclick="type('+')">+</td><td id="EQUAL" onclick="execute(inputBox,outputBox);retype=true;outputBox.style.backgroundColor='white';this.style.borderColor='black'">=</td></tr>
+<tr><td onclick="type('0')">0</td><td onclick="type('00')">00</td><td onclick="type('.')">.</td><td onclick="type('+')">+</td><td id="EQUAL" onclick="execute(inputBox.value,outputBox);retype=true;outputBox.style.backgroundColor='white';this.style.borderColor='black'">=</td></tr>
 </table>
 <table border=1 id="keyboard_layout2" style="text-align:center;width:100%;height:100%;table-layout:fixed;display:none"><!--子键盘布局。 Sub-keyboard layout.-->
 <!--“Math.?”按钮功能列表引用自Math类的成员列表并依样输入，实际效果依赖浏览器兼容性。 The button "Math.?" function list is referenced from the member list of the Math class and entered accordingly. The actual effect depends on the browser compatibility.-->
