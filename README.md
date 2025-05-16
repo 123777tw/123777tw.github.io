@@ -11,3 +11,10 @@ In addition, you will find an AGPL-3.0 license. It was chosen because, like the 
 鉴于Chromium对于Windows 7和8的支持已经尘埃落定，我们的项目在今后的很长一段时间内，对于兼容性问题都会秉承至高要求到109.0.5414，更高版本的特性原则上不会使用。
 
 Given that Chromium's support for Windows 7 and 8 has already been settled, our project will adhere to the highest requirements for compatibility issues in 109.0.5414 for a long period of time in the future, and the features of higher versions will not be used in principle.
+
+|操作系统<br>OS|最终支持的浏览器<br>Final Supported Browser|
+|---|---|
+|Android 2.3|[Firefox 47](https://ftp.mozilla.org/pub/mobile/releases/47.0/android-api-9/)|
+|Windows XP|[Chromium 44](https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Win/330231/)|
+|Android 4.4|[Chromium 87](https://github.com/bromite/chromium/releases/tag/87.0.4280.131)|
+|Windows 7<br>Windows 8|[Chromium 109](https://github.com/Hibbiki/chromium-win64/releases/tag/v109.0.5414.120-r1070088)|
