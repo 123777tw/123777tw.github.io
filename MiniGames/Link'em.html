@@ -44,6 +44,7 @@ function TimerRecovery(){//计时恢复
 	timerID = setInterval(TimerWorking,1000);//计时开始
 }
 function shuffle(){//洗牌：Fisher-Yates洗牌法
+	board.setAttribute('style', 'display:none');//隐藏游戏面板以避免洗牌过程中的多次重绘，提升性能。 Hide game board to avoid multiple repaints during shuffling and improve performance.
 	for(var i = cards.length; i > 0; i--){
 		var j = Math.floor(Math.random()*i);//确定对调牌
 		var jT = cards[j].innerText;//缓存对调牌面
@@ -53,6 +54,7 @@ function shuffle(){//洗牌：Fisher-Yates洗牌法
 		cards[i-1].innerText = jT;//取回缓存对调牌面
 		cards[i-1].setAttribute('style',jS);//取回缓存对调牌样式
 	}
+	board.removeAttribute('style');//恢复游戏面板的显示。 Restores the display of the game board.
 }
 function preExplore(X,Y,coords,rowPositions){//填充先选牌延伸坐标范围组
 	coords[0] = X;//记录横坐标
