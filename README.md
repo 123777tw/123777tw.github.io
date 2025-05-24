@@ -16,5 +16,5 @@ Given that Chromium's support for Windows 7 and 8 has already been settled, our 
 |---|---|
 |Android 2.3|[Firefox 47](https://ftp.mozilla.org/pub/mobile/releases/47.0/android-api-9/)|
 |Windows XP|[Chromium 44](https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Win/330231/)|
-|Android 4.4|[Chromium 87](https://github.com/bromite/chromium/releases/tag/87.0.4280.131)|
+|Android 4.4|[Chromium 83](https://github.com/bromite/chromium/releases/tag/83.0.4103.119)|
 |Windows 7<br>Windows 8|[Chromium 109](https://github.com/Hibbiki/chromium-win64/releases/tag/v109.0.5414.120-r1070088)|
