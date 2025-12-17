@@ -12,12 +12,15 @@ var K = N/D;//牌种数
 const board = document.createElement('table');//游戏面板
 const controlPanel = document.createElement('div');//控制面板
 const helpPanel = document.createElement('div');//帮助面板
+const scorePanel = document.createElement('div');//结算面板
 const cards = [];//存牌节点组
+var gravity;//存牌引力方向（Array[8~10][16~18]）
+var stage;//关卡数（对应引力方案）
 var selectedCard;//先选牌节点
 const coords = [0,0,0,0,0,0];//先选牌延伸坐标范围组：横纵左右上下，用于探索路径
-var noticeNode = document.createElement('button');//通知按钮节点
-var timerID;//使用setInterval函数构建计时器时的返回值
+const noticeNode = document.createElement('button');//通知按钮节点
 const timerNode = document.createElement('button');//计时器前端显示节点
+var timerID;//使用setInterval函数构建计时器时的返回值
 function TimerWorking(){//计时逻辑
 	var time = timerNode.innerText.split(':');//抓取当前计时
 	var m = parseInt(time[0]);//数字分
@@ -44,7 +47,7 @@ function TimerRecovery(){//计时恢复
 	timerID = setInterval(TimerWorking,1000);//计时开始
 }
 function shuffle(){//洗牌：Fisher-Yates洗牌法
-	board.setAttribute('style', 'display:none');//隐藏游戏面板以避免洗牌过程中的多次重绘，提升性能。 Hide game board to avoid multiple repaints during shuffling and improve performance.
+	board.setAttribute('style', 'display:none');//隐藏游戏面板以避免洗牌过程中的多次重绘，提升性能
 	for(var i = cards.length; i > 0; i--){
 		var j = Math.floor(Math.random()*i);//确定对调牌
 		var jT = cards[j].innerText;//缓存对调牌面
@@ -54,7 +57,7 @@ function shuffle(){//洗牌：Fisher-Yates洗牌法
 		cards[i-1].innerText = jT;//取回缓存对调牌面
 		cards[i-1].setAttribute('style',jS);//取回缓存对调牌样式
 	}
-	board.removeAttribute('style');//恢复游戏面板的显示。 Restores the display of the game board.
+	board.removeAttribute('style');//恢复游戏面板的显示
 }
 function preExplore(X,Y,coords,rowPositions){//填充先选牌延伸坐标范围组
 	coords[0] = X;//记录横坐标
@@ -256,6 +259,32 @@ function cheat(){
 		board.rows[0].lastElementChild.removeAttribute('style');//移除高亮
 	},500);//延迟时长半秒
 }
+function collapse(card,gx,gy,cx,cy){//坍缩（消除的牌，引力场横向分量，引力场纵向分量，后选牌的横坐标，后选牌的纵坐标）
+	var tr = card.parentNode;//tr节点
+	if(cx == undefined){cx = Array.prototype.indexOf.call(tr.cells,card);}//先选牌需要重新计算横坐标
+	if(gy >= 0){//引力场具有纵向分量
+		const tb = tr.parentNode;//tbody节点或者table节点
+		if(cy == undefined){cy = Array.prototype.indexOf.call(tb.rows,tr);}//先选牌需要重新计算纵坐标
+		if(cy != gy){//纵向需要冒泡
+			const step = cy > gy? -1: 1;//冒泡方向（步长）：注意Math.sign函数兼容性较差
+			//board.setAttribute('style', 'display:none');//隐藏游戏面板以避免冒泡过程中的多次重绘，提升性能：为了降低可能的负载峰值，决定在外部统一隐藏
+			for(var cn = [cy,cy + step]; cn[0] != gy; cn = [cn[0] + step, cn[1] + step]){//逐行窜牌
+				if(!(tb.rows[cn[1]].cells[cx].innerText)){gy = cn[0];break;}//已冒泡到边缘，停止冒泡
+				tb.rows[cn[0]].insertBefore(tb.rows[cn[1]].cells[cx], tb.rows[cn[0]].cells[cx]);
+			}
+			tb.rows[gy].insertBefore(card, tb.rows[gy].cells[cx]);//最终冒泡
+			//board.removeAttribute('style');//恢复游戏面板的显示
+			tr = card.parentNode;//tr节点重新缓存
+		}
+	}
+	if(gx >= 0){//引力场具有横向分量
+		if(gx < cx){//向左冒泡
+			tr.insertBefore(card,tr.cells[gx]);//冒泡到场边缘：模仿“不分青红皂白地冒泡到边缘”的特性，后续可能会被优化掉233
+		}else{//向右冒泡
+			tr.insertBefore(card,tr.cells[gx].nextSibling);//应对消除的牌自身抽离导致最终节点向左偏移的现象：最终结果应当与感官一致
+		}
+	}
+}
 function select(card){//选择牌
 	const rowPositions = card.parentNode.cells;//横排布局：具有天然的集合，缓存以期望提升性能
 	const X = Array.prototype.indexOf.call(rowPositions,card);//选点横坐标
@@ -289,12 +318,25 @@ function select(card){//选择牌
 		card.setAttribute('onclick','selectCancel()');//后选牌消除点击事件
 		cards.splice(cards.indexOf(selectedCard),1);//存牌节点组移除先选牌
 		cards.splice(cards.indexOf(card),1);//存牌节点组移除后选牌
-		selectedCard = undefined;//消除选牌
 		if(!cards.length){//如果游戏完成
 			TimerPause();//计时暂停
-			document.body.appendChild(document.createElement('div'));//结算面板
-			document.body.lastElementChild.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto';//面板遮罩
-			document.body.lastElementChild.setAttribute('onclick','location.reload()');//点击结算面板刷新页面
+			scorePanel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto';//面板遮罩
+			if(stage != undefined){//预设有关卡
+				localStorage.setItem("MiniGames|Link'em|S",stage+1);//进入下一关
+				scorePanel.innerHTML = '<div style="border:1px solid;height:80%;width:90%;background:white;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;font-size:50vh;text-align:center">'+(stage == -1? '&#127881;': (stage+1).toString())+'</div>';//面板内容：暂定只显示下一关的序号
+			}
+			scorePanel.setAttribute('onclick','location.reload()');//点击结算面板刷新页面
+			document.body.appendChild(scorePanel);//结算面板构建完成
+		}else{//游戏仍在继续
+			board.setAttribute('style', 'display:none');//隐藏游戏面板以避免冒泡过程中的多次重绘，提升性能：为了降低可能的负载峰值，决定在此处统一隐藏
+			if(gravity && gravity[Y] && gravity[Y][X]){//后选牌处于引力场内：为了充分利用先前缓存的X和Y，此处必须先处理后选牌
+				collapse(card,parseInt(gravity[Y][X].slice(0,1),36),parseInt(gravity[Y][X].slice(1,2),36),X,Y);//坍缩后选牌位置
+			}
+			if(gravity && gravity[coords[1]] && gravity[coords[1]][coords[0]]){//先选牌处于引力场内：注意这里采用了后选牌尚未冒泡、玩家实际选择时的坐标
+				collapse(selectedCard,parseInt(gravity[coords[1]][coords[0]].slice(0,1),36),parseInt(gravity[coords[1]][coords[0]].slice(1,2),36));//坍缩先选牌位置：注意实际冒泡时使用的坐标需要重新计算
+			}
+			board.removeAttribute('style');//恢复游戏面板的显示
+			selectedCard = undefined;//消除选牌
 		}
 		setTimeout(function(){//延迟执行部分
 			for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
@@ -319,8 +361,52 @@ function selectCancel(){//取消选牌
 	}
 }
 function init(){//初始化界面
+	var i;//循环语句迭代器
 	board.innerHTML = Array.prototype.join.call({length:H+1},'<tr>'+Array.prototype.join.call({length:W+1},'<td onclick="selectCancel()"></td>')+'</tr>');//构建游戏面板布局
-	for(var i = N; i > 0; i--){//布牌：融合了洗牌
+	if(localStorage && localStorage.getItem("MiniGames|Link'em|G")){//如果浏览器支持本地存储器（localStorage）且其中设置了引力
+		stage = parseInt(localStorage.getItem("MiniGames|Link'em|S"));//从缓存获取关卡数（从0计）
+		if(isNaN(stage)){stage = 0;}//统一数据类型,以适应后续迭代
+		noticeNode.innerText = stage.toString();//通知帮助显示关卡信息
+		gravity = localStorage.getItem("MiniGames|Link'em|G").split('|');//从缓存获取全局引力信息
+		if(stage == gravity.length-1){//末关
+			gravity = eval(gravity[stage]);//获取当前关卡的引力信息（或执行MOD代码）
+			stage = -1;//以使下一关循环到首关
+		}else{
+			gravity = eval(gravity[stage]);//获取当前关卡的引力信息（或执行MOD代码）
+		}
+	}else{
+		noticeNode.innerText = '?';//常规通知帮助
+	}
+	if(gravity){//如果当前关卡确实存在引力
+		const gravityBoard = board.cloneNode(true);//引力面板：复制游戏面板布局用于展示引力分布情况
+		for(i = W-2; i > 0; i--){//设置横坐标提示
+			gravityBoard.rows[0].cells[i].innerText = gravityBoard.rows[H-1].cells[i].innerText = i.toString(36)+'_';//设置上下边缘提示
+		}
+		for(i = H-2; i > 0; i--){//设置横坐标提示
+			gravityBoard.rows[i].cells[0].innerText = gravityBoard.rows[i].cells[W-1].innerText = '_'+i.toString(36);//设置左右边缘提示
+		}
+		gravityBoard.rows[0].cells[0].innerText = '00';//设置左上角坐标提示
+		gravityBoard.rows[0].cells[W-1].innerText = (W-1).toString(36)+'0';//设置右上角坐标提示
+		gravityBoard.rows[H-1].cells[0].innerText = '0'+(H-1).toString(36);//设置左下角坐标提示
+		gravityBoard.rows[H-1].cells[W-1].innerText = (W-1).toString(36)+(H-1).toString(36);//设置右下角坐标提示
+		helpPanel.innerHTML = '<div style="height:80%;width:90%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto"></div>';//帮助面板实体区域
+		helpPanel.firstElementChild.appendChild(gravityBoard).style.cssText = 'height:100%;width:100%;color:blue;background:white;border:1px solid black;text-align:center';//复制游戏面板布局并设置样式
+		gravity.forEach(function(row,Y){//为帮助面板填逐行充引力信息
+			row.forEach(function(text,X){//为帮助面板的当前行逐格填充引力信息
+				var p = gravityBoard.rows[Y].cells[X];//gravity数组的两级下标分别与HTMLTableElement.rows下标和HTMLTableRowElement.cells下标对应
+				p.innerText = text;//设置当前位置的引力信息文本
+				p.style.cssText = 'border:1px solid;color:black';//设置当前位置边框（并覆盖可能预设的其他样式）
+			});
+		});
+	}else{
+		helpPanel.innerHTML = '<div style="height:80%;width:90%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto"><table border="1" style="height:100%;width:100%;background:white;text-align:center">'
+			+'<tr><td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid">1</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid">1</td><td></td><td></td></tr><tr></tr><tr><td colspan="8" style="color:green">&#x2713</td></tr></table></td>'
+			+'<td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid">2</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua;color:aqua">&#x2460</td><td></td><td></td></tr><tr><td colspan="5"></td><td style="border:1px solid">2</td></tr><tr><td colspan="8" style="color:green">&#x2713</td></tr></table></td></tr>'
+			+'<tr><td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid aqua;color:aqua">&#x2460</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua;color:aqua">&#x2461</td></tr><tr><td></td><td></td><td style="border:1px solid aqua"></td><td></td><td></td><td style="border:1px solid aqua"></td></tr><tr><td></td><td></td><td style="border:1px solid">3</td><td style="border:1px solid;color:silver">1</td><td style="border:1px solid;color:silver">2</td><td style="border:1px solid">3</td><td></td><td></td></tr><tr><td colspan="8" style="color:green">&#x2713</td></tr></table></td>'
+			+'<td><table><tr></tr><tr><td></td><td></td><td></td><td style="border:1px solid">4</td><td style="border:1px solid">5</td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td style="border:1px solid">5</td><td style="border:1px solid">4</td></tr><tr><td colspan="8" style="color:red">&#x2717</td></tr></table></td></tr>'
+			+'</table></div>';//常规帮助面板内容
+	}
+	for(i = N; i > 0; i--){//布牌：融合了洗牌
 		var iN = board.rows[Math.ceil(i/(W-2))].cells[(i-1)%(W-2)+1];//遍历节点
 		var iV = iN.innerText;//遍历节点当前值
 		var j = Math.floor(Math.random()*(i-1))+1;//洗牌位置
@@ -328,30 +414,22 @@ function init(){//初始化界面
 		var jV = jN.innerText;//洗牌节点当前值
 		jN.innerText = iV? iV: Math.ceil(i/D).toString();//洗牌节点遍历值
 		iN.innerText = jV? jV: Math.ceil(j/D).toString();//遍历节点洗牌值
-		iN.style.cssText = localStorage? localStorage.getItem("MiniGames|Link'em|C"+iN.innerText): '';//从缓存获取预设值的牌样式
+		iN.style.cssText = localStorage? localStorage.getItem("MiniGames|Link'em|C"+iN.innerText): '';//从缓存获取可能预设值的牌样式
 		iN.style.border = '1px solid';//遍历节点边框
 		iN.setAttribute('onclick','select(this)');//点击事件
 		cards.push(iN);//遍历节点设置完成
 	}
-	board.rows[0].firstElementChild.appendChild(noticeNode);//通知按钮
-	noticeNode.innerText = '?';//通知帮助
 	noticeNode.setAttribute('onclick','helpPanel.style.display="block";if(timerID){TimerPause();}');//点击显示帮助
+	board.rows[0].firstElementChild.appendChild(noticeNode);//通知按钮构建完成
 	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">&#x1F504;</button>';//洗牌按钮
 	board.rows[board.rows.length-1].firstElementChild.appendChild(timerNode);//计时器面板
 	timerNode.innerText = '00:00';//计时器置零
-	//timerNode.setAttribute('onclick','controlPanel.style.display="block";if(timerID){TimerPause();}');//TODO:点击计时器可暂停并打开设置面板
 	board.rows[board.rows.length-1].lastElementChild.innerHTML = '<button onclick="cheat()">&#x1F50D;</button>';//作弊按钮
 	document.body.appendChild(board);//游戏面板构建完成
-	helpPanel.style.cssText = controlPanel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;display:none';//面板遮罩
-	helpPanel.innerHTML = '<div style="height:80%;width:90%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto"><table border="1" style="height:100%;width:100%;background:white;text-align:center">'
-		+'<tr><td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid">1</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid">1</td><td></td><td></td></tr><tr></tr><tr><td colspan="8" style="color:green">&#x2713</td></tr></table></td>'
-		+'<td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid">2</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua;color:aqua">&#x2460</td><td></td><td></td></tr><tr><td colspan="5"></td><td style="border:1px solid">2</td></tr><tr><td colspan="8" style="color:green">&#x2713</td></tr></table></td></tr>'
-		+'<tr><td><table><tr></tr><tr><td></td><td></td><td style="border:1px solid aqua;color:aqua">&#x2460</td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua"></td><td style="border:1px solid aqua;color:aqua">&#x2461</td></tr><tr><td></td><td></td><td style="border:1px solid aqua"></td><td></td><td></td><td style="border:1px solid aqua"></td></tr><tr><td></td><td></td><td style="border:1px solid">3</td><td style="border:1px solid;color:silver">1</td><td style="border:1px solid;color:silver">2</td><td style="border:1px solid">3</td><td></td><td></td></tr><tr><td colspan="8" style="color:green">&#x2713</td></tr></table></td>'
-		+'<td><table><tr></tr><tr><td></td><td></td><td></td><td style="border:1px solid">4</td><td style="border:1px solid">5</td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td style="border:1px solid">5</td><td style="border:1px solid">4</td></tr><tr><td colspan="8" style="color:red">&#x2717</td></tr></table></td></tr>'
-		+'</table></div>';//帮助面板内容
 	controlPanel.innerHTML = '<div style="border:1px solid;height:80%;width:90%;background:white;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;font-size:50vh;text-align:center">&#128164;</div>';//控制面板内容
 	helpPanel.setAttribute('onclick','this.style.display="none";if(timerID){TimerRecovery();}');//点击恢复游戏
 	controlPanel.setAttribute('onclick','this.style.display="none";if(timerID){TimerRecovery();}');//点击恢复游戏
+	helpPanel.style.cssText = controlPanel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;display:none';//双面板遮罩
 	document.body.appendChild(helpPanel);//帮助面板构建完成
 	document.body.appendChild(controlPanel);//控制面板构建完成
 }
