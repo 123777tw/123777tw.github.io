@@ -312,10 +312,6 @@ function select(card){//选择牌
 		return;
 	}
 	if(explorePath(selectedCard,coords,card,X,Y,SelectedPath)){//可以连接
-		selectedCard.innerHTML = '';//先选牌消除显示
-		card.innerHTML = '';//后选牌消除显示
-		selectedCard.setAttribute('onclick','selectCancel()');//先选牌消除点击事件
-		card.setAttribute('onclick','selectCancel()');//后选牌消除点击事件
 		cards.splice(cards.indexOf(selectedCard),1);//存牌节点组移除先选牌
 		cards.splice(cards.indexOf(card),1);//存牌节点组移除后选牌
 		if(!cards.length){//如果游戏完成
@@ -336,8 +332,12 @@ function select(card){//选择牌
 				collapse(selectedCard,parseInt(gravity[coords[1]][coords[0]].slice(0,1),36),parseInt(gravity[coords[1]][coords[0]].slice(1,2),36));//坍缩先选牌位置：注意实际冒泡时使用的坐标需要重新计算
 			}
 			board.removeAttribute('style');//恢复游戏面板的显示
-			selectedCard = undefined;//消除选牌
 		}
+		selectedCard.innerHTML = '';//先选牌消除显示
+		card.innerHTML = '';//后选牌消除显示
+		selectedCard.setAttribute('onclick','selectCancel()');//先选牌消除点击事件
+		card.setAttribute('onclick','selectCancel()');//后选牌消除点击事件
+		selectedCard = undefined;//消除选牌
 		setTimeout(function(){//延迟执行部分
 			for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
 				SelectedPath[i].removeAttribute('style');//移除高亮
