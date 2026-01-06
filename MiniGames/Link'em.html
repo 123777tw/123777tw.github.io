@@ -8,7 +8,7 @@ var W = 18;//面板宽度
 var H = 10;//面板高度
 var N = (W-2)*(H-2);//牌数量
 var D = 4;//牌副数
-var K = N/D;//牌种数
+//var K = N/D;//牌种数
 const board = document.createElement('table');//游戏面板
 const controlPanel = document.createElement('div');//控制面板
 const helpPanel = document.createElement('div');//帮助面板
@@ -20,6 +20,8 @@ var selectedCard;//先选牌节点
 const coords = [0,0,0,0,0,0];//先选牌延伸坐标范围组：横纵左右上下，用于探索路径
 const noticeNode = document.createElement('button');//通知按钮节点
 const timerNode = document.createElement('button');//计时器前端显示节点
+var shuffleCount = document.createElement('span');//统计洗牌次数
+var cheatCount = document.createElement('span');//统计作弊次数
 var timerID;//使用setInterval函数构建计时器时的返回值
 function TimerWorking(){//计时逻辑
 	var time = timerNode.innerText.split(':');//抓取当前计时
@@ -57,6 +59,11 @@ function shuffle(){//洗牌：Fisher-Yates洗牌法
 		cards[i-1].innerText = jT;//取回缓存对调牌面
 		cards[i-1].setAttribute('style',jS);//取回缓存对调牌样式
 	}
+	if(timerID){//如果游戏已经开始
+		shuffleCount.innerText++;//统计洗牌次数增加
+	}else{//游戏并未开始
+		cheatCount.innerText = 0;//清除可能存在的统计作弊次数
+	}
 	board.removeAttribute('style');//恢复游戏面板的显示
 }
 function preExplore(X,Y,coords,rowPositions){//填充先选牌延伸坐标范围组
@@ -88,6 +95,7 @@ function explorePath(selectedCard,coords,card,X,Y,SelectedPath){//探索连接�
 	var Y1 = Y;//用于缓存探索潜在转弯路径时迭代的横纵标
 	const coords2 = [0,0,0,0];//用于在探索二次转弯路径时缓存新先选牌相关坐标范围组：右左下上
 	function hightlightPath(){//高亮并缓存连接路径
+		board.setAttribute('style', 'display:none');//隐藏游戏面板以避免设置样式过程中的多次重绘，提升性能
 		card.style.border = '1px solid aqua';//后选牌高亮
 		SelectedPath.unshift(card);//缓存后选牌
 		for(var i = 1; i < SelectedPath.length; i++){//遍历转弯路径缓存节点
@@ -111,6 +119,7 @@ function explorePath(selectedCard,coords,card,X,Y,SelectedPath){//探索连接�
 		}
 		selectedCard.style.border = '1px solid aqua';//先选牌高亮
 		SelectedPath.push(selectedCard);//缓存先选牌
+		board.removeAttribute('style');//恢复游戏面板的显示
 		return true;//可以连接
 	}
 	function explore2TurnsPath(){//探索二次转弯路径（声明函数以减少代码缩进并增加可读性）
@@ -235,6 +244,8 @@ function cheat(){
 	const SelectedPath = [];//用于缓存连接路径供延迟取消高亮
 	var i = cards.length;//先选牌迭代器
 	var j;//后选牌迭代器
+	board.setAttribute('style', 'display:none');//隐藏游戏面板以避免设置高亮样式过程中的多次重绘，提升性能
+	if(selectedCard != cheatCount.parentNode.parentNode){cheatCount.innerText++;}//统计作弊次数增加：连续多次点击按钮仅记作一次，因为当前的作弊算法每次都会给出完全相同的结果
 	while(--i >= 0){//遍历先选牌
 		rowPositions = cards[i].parentNode.cells;//缓存横排布局
 		preExplore(Array.prototype.indexOf.call(rowPositions,cards[i]),Array.prototype.indexOf.call(board.rows,cards[i].parentNode),coords,rowPositions);//填充先选牌延伸坐标范围组
@@ -243,11 +254,13 @@ function cheat(){
 			if(cards[j].innerHTML == cards[i].innerHTML){//先确保牌面相同
 				if(explorePath(cards[i],coords,cards[j],Array.prototype.indexOf.call(cards[j].parentNode.cells,cards[j]),Array.prototype.indexOf.call(board.rows,cards[j].parentNode),SelectedPath)){//找到任意可连接路径
 					setTimeout(function(){//延迟执行部分
+						board.setAttribute('style', 'display:none');//隐藏游戏面板以避免删除样式过程中的多次重绘，提升性能
 						SelectedPath[0].style.borderColor = '';//后选牌恢复边框
 						for(var i = 1; i < SelectedPath.length - 1; i++){//遍历缓存节点
 							SelectedPath[i].removeAttribute('style');//移除高亮
 						}
 						SelectedPath[SelectedPath.length - 1].style.borderColor = '';//先选牌恢复边框
+						board.removeAttribute('style');//恢复游戏面板的显示
 					},500);//延迟时长半秒
 					return;
 				}
@@ -255,6 +268,7 @@ function cheat(){
 		}
 	}//没有找到任何可连接路径
 	board.rows[0].lastElementChild.style.border = '1px solid aqua';//高亮洗牌按钮所在单元格
+	board.removeAttribute('style');//恢复游戏面板的显示
 	setTimeout(function(){//延迟执行部分
 		board.rows[0].lastElementChild.removeAttribute('style');//移除高亮
 	},500);//延迟时长半秒
@@ -339,9 +353,11 @@ function select(card){//选择牌
 		card.setAttribute('onclick','selectCancel()');//后选牌消除点击事件
 		selectedCard = undefined;//消除选牌
 		setTimeout(function(){//延迟执行部分
+			board.setAttribute('style', 'display:none');//隐藏游戏面板以避免删除样式过程中的多次重绘，提升性能
 			for(var i = 0; i < SelectedPath.length; i++){//遍历缓存节点
 				SelectedPath[i].removeAttribute('style');//移除高亮
 			}
+			board.removeAttribute('style');//恢复游戏面板的显示
 		},500);//延迟时长半秒
 	}else{//无法连接
 		selectedCard.style.border = '1px solid red';//先选牌高亮
@@ -361,8 +377,9 @@ function selectCancel(){//取消选牌
 	}
 }
 function init(){//初始化界面
-	var i;//循环语句迭代器
-	board.innerHTML = Array.prototype.join.call({length:H+1},'<tr>'+Array.prototype.join.call({length:W+1},'<td onclick="selectCancel()"></td>')+'</tr>');//构建游戏面板布局
+	var i;//循环语句迭代器;临时变量
+	function MOD(){}//用于承接MOD收尾代码
+try{
 	if(localStorage && localStorage.getItem("MiniGames|Link'em|G")){//如果浏览器支持本地存储器（localStorage）且其中设置了引力
 		stage = parseInt(localStorage.getItem("MiniGames|Link'em|S"));//从缓存获取关卡数（从0计）
 		if(isNaN(stage)){stage = 0;}//统一数据类型,以适应后续迭代
@@ -377,6 +394,7 @@ function init(){//初始化界面
 	}else{
 		noticeNode.innerText = '?';//常规通知帮助
 	}
+	board.innerHTML = Array.prototype.join.call({length:H+1},'<tr>'+Array.prototype.join.call({length:W+1},'<td onclick="selectCancel()"></td>')+'</tr>');//构建游戏面板布局
 	if(gravity){//如果当前关卡确实存在引力
 		const gravityBoard = board.cloneNode(true);//引力面板：复制游戏面板布局用于展示引力分布情况
 		for(i = W-2; i > 0; i--){//设置横坐标提示
@@ -421,10 +439,17 @@ function init(){//初始化界面
 	}
 	noticeNode.setAttribute('onclick','helpPanel.style.display="block";if(timerID){TimerPause();}');//点击显示帮助
 	board.rows[0].firstElementChild.appendChild(noticeNode);//通知按钮构建完成
-	board.rows[0].lastElementChild.innerHTML = '<button onclick="shuffle()">&#x1F504;</button>';//洗牌按钮
+	i = board.rows[0].lastElementChild;//缓存洗牌按钮坐标节点
+	i.innerHTML = '<button onclick="shuffle()">&#x1F504;*</button>';//构建洗牌按钮
+	shuffleCount.innerText = '0';//初始化统计洗牌次数
+	i.firstElementChild.appendChild(shuffleCount);//插入统计洗牌次数节点
 	board.rows[board.rows.length-1].firstElementChild.appendChild(timerNode);//计时器面板
 	timerNode.innerText = '00:00';//计时器置零
-	board.rows[board.rows.length-1].lastElementChild.innerHTML = '<button onclick="cheat()">&#x1F50D;</button>';//作弊按钮
+	i = board.rows[board.rows.length-1].lastElementChild;//缓存作弊按钮坐标节点
+	i.setAttribute('onclick',"if(selectedCard){selectedCard.removeAttribute('bgColor');}this.bgColor='aqua';selectedCard=this");//用于记录连续点击情况
+	i.innerHTML = '<button onclick="cheat()">&#x1F50D;*</button>';//作弊按钮
+	cheatCount.innerText = '0';//初始化统计作弊次数
+	i.firstElementChild.appendChild(cheatCount);//插入统计作弊次数节点
 	document.body.appendChild(board);//游戏面板构建完成
 	controlPanel.innerHTML = '<div style="border:1px solid;height:80%;width:90%;background:white;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;font-size:50vh;text-align:center">&#128164;</div>';//控制面板内容
 	helpPanel.setAttribute('onclick','this.style.display="none";if(timerID){TimerRecovery();}');//点击恢复游戏
@@ -432,6 +457,8 @@ function init(){//初始化界面
 	helpPanel.style.cssText = controlPanel.style.cssText = 'height:100%;width:100%;position:absolute;top:0;left:0;right:0;bottom:0;margin:auto;display:none';//双面板遮罩
 	document.body.appendChild(helpPanel);//帮助面板构建完成
 	document.body.appendChild(controlPanel);//控制面板构建完成
+	MOD();//执行可能存在的MOD收尾代码
+}catch(e){MOD(e);}//在MOD中重构初始化逻辑
 }
 </script>
 <style>
