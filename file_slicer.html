@@ -265,7 +265,7 @@ function lazyDump2Filename(content) {//懒惰地向文件名转储（文件主�
 <script>
 function lazyInjectData(content, fileName) {//懒惰地注入数据（文件主体，文件名）
 	var s = parseInt(document.getElementById("DumpSize").value);//根据之前定义的id获取到用户希望的转储字节数。这个数字之后会被多次引用。According to the previously defined ID, the desired number of dump bytes is obtained. This number will be referenced many times.
-	var d = window.atob((fileName ? fileName : content.name).split('.')[0].replace(/_/g,'/'));//排除扩展名，还原改变的字符。 Exclude extensions and restore changed characters.
+	var d = window.atob((fileName ? fileName : content.name).split('.')[0].replace(/_/g,'/').replace(/-/g,'+'));//排除扩展名，还原改变的字符(同时兼容URL-safe base64）。 Exclude extensions and restore changed characters(also compatible with URL-safe base64).
 	s = s > 0 && s <= d.length ? s : d.length;//确定数据字节数。 Determine the number of data bytes.
 	var ba = new Uint8Array(s);//用于存储原本的二进制数据。 Used to store original binary data.
 	while(s--) {ba[s] = d.charCodeAt(s);}//转换成字符串所代表的真正的二进制数据。 Convert to the real binary data represented by the string.
